@@ -18,8 +18,12 @@ dist-ssr
 
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
 packages/*/dist
+
+# Supabase CLI local state
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*

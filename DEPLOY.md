@@ -13,20 +13,28 @@ Summary of the Cloudflare Pages setup and deploy steps after multi-user auth.
 - `src/server.ts` — shared tool definitions; inserts include `user_id` from JWT
 - `src/stdio.ts` — local stdio MCP; requires `SUPABASE_ACCESS_TOKEN`
 - `src/http.ts` — JWT auth via `Authorization: Bearer`; uses anon key + user token
+- `src/oauth/` — OAuth 2.1 + PKCE for Grok and other MCP clients
 
 ### Pages Functions (`packages/web/functions/`)
 - `mcp/[[path]].ts` — wraps `handleMcp` from `@nutrition-tracker/mcp-server/http`
+- `authorize.ts`, `token.ts`, `register.ts` — OAuth endpoints
+- `.well-known/oauth-*` — MCP OAuth metadata
 
 ### Cloudflare config (`packages/web/wrangler.toml`)
 - `pages_build_output_dir = "./dist"`
-- Secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (for `/mcp` function)
+- Secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OAUTH_SIGNING_SECRET`
 
 ## Routes exposed
 
-| Path   | Purpose                                                    |
-| ------ | ---------------------------------------------------------- |
-| `/`    | Static React dashboard (auth required)                     |
-| `/mcp` | MCP HTTP endpoint — `Authorization: Bearer <jwt>` required |
+| Path                                        | Purpose                                     |
+| ------------------------------------------- | ------------------------------------------- |
+| `/`                                         | Static React dashboard (auth required)      |
+| `/mcp`                                      | MCP HTTP endpoint (Bearer JWT required)     |
+| `/.well-known/oauth-authorization-server`   | OAuth metadata for MCP clients (Grok, etc.) |
+| `/.well-known/oauth-protected-resource`     | Protected resource metadata                 |
+| `/authorize`                                | OAuth authorization + sign-in               |
+| `/token`                                    | OAuth token exchange + refresh              |
+| `/register`                                 | Dynamic client registration                 |
 
 ## Verification
 
@@ -61,8 +69,10 @@ npx wrangler pages project create nutrition-tracker --production-branch main
 ### 3. Secrets
 
 ```sh
-npx wrangler pages secret put SUPABASE_URL      --project-name nutrition-tracker
-npx wrangler pages secret put SUPABASE_ANON_KEY --project-name nutrition-tracker
+npx wrangler pages secret put SUPABASE_URL          --project-name nutrition-tracker
+npx wrangler pages secret put SUPABASE_ANON_KEY     --project-name nutrition-tracker
+npx wrangler pages secret put OAUTH_SIGNING_SECRET  --project-name nutrition-tracker
+# openssl rand -base64 32
 ```
 
 ### 4. Build and deploy
@@ -71,17 +81,19 @@ npx wrangler pages secret put SUPABASE_ANON_KEY --project-name nutrition-tracker
 export VITE_SUPABASE_URL=https://<your-project>.supabase.co
 export VITE_SUPABASE_ANON_KEY=<anon-key>
 npm run build
-npx wrangler pages deploy packages/web/dist --project-name nutrition-tracker --branch main
+cd packages/web && npx wrangler pages deploy dist --project-name nutrition-tracker --branch main
 ```
 
-### 5. Connect an MCP client
+### 5. Connect Grok (custom MCP connector)
 
-Deployed MCP URL:
+1. Deploy and set all three secrets above.
+2. In Grok, go to [grok.com/connectors](https://grok.com/connectors) → **New Connector** → **Custom**.
+3. MCP server URL: `https://<your-pages-domain>/mcp`
+4. Grok discovers OAuth metadata, opens `/authorize`, and prompts you to sign in with your Nutrition Tracker account.
+5. After authorization, Grok stores the Supabase access token and calls MCP tools on your behalf.
 
-```
-https://nutrition-tracker.pages.dev/mcp
-```
+### 6. Connect other MCP clients
 
-Clients must send the user's Supabase `access_token` as a Bearer token on every request. Sign in via the web app, copy the token from the session, and configure your MCP client accordingly.
+**OAuth-capable clients** (Grok, etc.): use the deployed `/mcp` URL — OAuth is automatic.
 
-For local stdio development: set `SUPABASE_ACCESS_TOKEN` in `packages/mcp-server/.env` and run `npm run dev:mcp`.
+**Manual token clients** (local stdio, some IDEs): sign in via the web app, copy the Supabase `access_token`, and configure the client. For local stdio: set `SUPABASE_ACCESS_TOKEN` in `packages/mcp-server/.env` and run `npm run dev:mcp`.

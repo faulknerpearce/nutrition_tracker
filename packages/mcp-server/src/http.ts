@@ -1,9 +1,13 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
+import { wwwAuthenticateHeader } from './oauth/metadata.js'
 import { createAuthenticatedSupabase, createServer } from './server.js'
 
 export interface McpEnv {
   SUPABASE_URL: string
   SUPABASE_ANON_KEY: string
+  /** Public origin for OAuth metadata, e.g. https://nutrition-tracker.pages.dev */
+  MCP_PUBLIC_URL?: string
+  OAUTH_SIGNING_SECRET?: string
 }
 
 function extractBearerToken(request: Request): string | null {
@@ -13,11 +17,33 @@ function extractBearerToken(request: Request): string | null {
   return token || null
 }
 
-function unauthorized(message: string): Response {
-  return new Response(JSON.stringify({ error: message }), {
-    status: 401,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
-  })
+function publicUrl(request: Request, env: McpEnv): string | null {
+  if (env.MCP_PUBLIC_URL) return env.MCP_PUBLIC_URL.replace(/\/$/, '')
+  try {
+    const url = new URL(request.url)
+    return `${url.protocol}//${url.host}`
+  } catch {
+    return null
+  }
+}
+
+function unauthorized(request: Request, env: McpEnv, message: string): Response {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...corsHeaders(),
+  }
+
+  const origin = publicUrl(request, env)
+  if (origin && env.OAUTH_SIGNING_SECRET) {
+    headers['WWW-Authenticate'] = wwwAuthenticateHeader({
+      SUPABASE_URL: env.SUPABASE_URL,
+      SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY,
+      OAUTH_SIGNING_SECRET: env.OAUTH_SIGNING_SECRET,
+      MCP_PUBLIC_URL: origin,
+    })
+  }
+
+  return new Response(JSON.stringify({ error: message }), { status: 401, headers })
 }
 
 /**
@@ -26,6 +52,8 @@ function unauthorized(message: string): Response {
  * handles the request, then returns the response.
  *
  * Requires `Authorization: Bearer <supabase_access_token>` on every request.
+ * Unauthenticated requests return HTTP 401 with MCP OAuth discovery headers when
+ * OAUTH_SIGNING_SECRET is configured.
  */
 export async function handleMcp(request: Request, env: McpEnv): Promise<Response> {
   if (request.method === 'OPTIONS') {
@@ -44,7 +72,11 @@ export async function handleMcp(request: Request, env: McpEnv): Promise<Response
 
   const accessToken = extractBearerToken(request)
   if (!accessToken) {
-    return unauthorized('Missing or invalid Authorization header (Bearer token required)')
+    return unauthorized(
+      request,
+      env,
+      'Missing or invalid Authorization header (Bearer token required)',
+    )
   }
 
   const supabase = createAuthenticatedSupabase(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, accessToken)
@@ -53,7 +85,7 @@ export async function handleMcp(request: Request, env: McpEnv): Promise<Response
     error: authError,
   } = await supabase.auth.getUser()
   if (authError || !user) {
-    return unauthorized(authError?.message ?? 'Invalid or expired access token')
+    return unauthorized(request, env, authError?.message ?? 'Invalid or expired access token')
   }
 
   const transport = new WebStandardStreamableHTTPServerTransport({

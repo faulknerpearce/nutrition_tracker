@@ -109,9 +109,12 @@ flowchart LR
   User -->|email/password| SupabaseAuth[Supabase Auth]
   SupabaseAuth -->|session JWT| WebApp[React dashboard]
   WebApp -->|anon key + JWT| FoodEntries[(food_entries)]
-  MCPAgent[MCP client] -->|anon key + Bearer JWT| McpEndpoint["/mcp"]
+  Grok[Grok / MCP client] -->|OAuth PKCE| OAuth["/authorize + /token"]
+  OAuth -->|Supabase JWT| McpEndpoint["/mcp"]
   McpEndpoint --> FoodEntries
 ```
+
+Grok and other OAuth-capable MCP clients use the built-in OAuth 2.1 + PKCE flow (`/authorize`, `/token`, `/.well-known/*`). The issued access token is the user's Supabase session JWT, so RLS still scopes all tool calls per user.
 
 ## Cloudflare deployment
 
@@ -121,8 +124,9 @@ flowchart LR
 npx wrangler login
 npx wrangler pages project create nutrition-tracker --production-branch main
 
-npx wrangler pages secret put SUPABASE_URL       --project-name nutrition-tracker
-npx wrangler pages secret put SUPABASE_ANON_KEY  --project-name nutrition-tracker
+npx wrangler pages secret put SUPABASE_URL          --project-name nutrition-tracker
+npx wrangler pages secret put SUPABASE_ANON_KEY     --project-name nutrition-tracker
+npx wrangler pages secret put OAUTH_SIGNING_SECRET  --project-name nutrition-tracker
 ```
 
 Set build-time vars before `npm run build` (embedded in the client bundle):
@@ -145,6 +149,7 @@ npx wrangler pages deploy packages/web/dist --project-name nutrition-tracker --b
 | ------ | -------------------------------------------------------------- |
 | `/`    | Static React dashboard (sign-in required)                      |
 | `/mcp` | MCP HTTP endpoint — requires `Authorization: Bearer <jwt>`     |
+| `/authorize`, `/token`, `/register`, `/.well-known/*` | OAuth for Grok and other MCP clients |
 
 ### Local Pages preview
 

@@ -3,10 +3,6 @@ compatibility_date = "2025-01-15"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
 
-# Static assets
-[build]
-command = "npm run build"
-
 # Environment variables (non-secret)
 [vars]
 # SUPABASE_URL and SUPABASE_ANON_KEY are set as encrypted secrets via:

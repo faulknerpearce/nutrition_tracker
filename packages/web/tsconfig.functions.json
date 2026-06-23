@@ -13,6 +13,7 @@
     "functions",
     "vite.config.ts",
     "../mcp-server/src/http.ts",
-    "../mcp-server/src/server.ts"
+    "../mcp-server/src/server.ts",
+    "../mcp-server/src/oauth/**/*.ts"
   ]
 }
