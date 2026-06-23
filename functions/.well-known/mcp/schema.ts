@@ -1,0 +1,1 @@
+export { onRequest } from '../../../packages/web/functions/.well-known/mcp/schema.ts'

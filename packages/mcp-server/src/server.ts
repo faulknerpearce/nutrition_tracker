@@ -32,6 +32,19 @@ export function createAuthenticatedSupabase(
   })
 }
 
+/** JSON Schema object inputs — strict shape Grok and other MCP clients expect. */
+function objectSchema(
+  properties: Record<string, Record<string, unknown>>,
+  required?: string[],
+): Tool['inputSchema'] {
+  return {
+    type: 'object',
+    properties,
+    ...(required?.length ? { required } : {}),
+    additionalProperties: false,
+  }
+}
+
 async function requireUserId(supabase: NutritionSupabase): Promise<string> {
   const {
     data: { user },
@@ -46,22 +59,18 @@ export const tools: Tool[] = [
   {
     name: 'list_food_entries',
     description: 'List all food log entries for today (entry_date = current date)',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        date: {
-          type: 'string',
-          description: 'ISO date (YYYY-MM-DD) to filter on. Defaults to today.',
-        },
+    inputSchema: objectSchema({
+      date: {
+        type: 'string',
+        description: 'ISO date (YYYY-MM-DD) to filter on. Defaults to today.',
       },
-    },
+    }),
   },
   {
     name: 'add_food_entry',
     description: "Add a new food entry to today's log",
-    inputSchema: {
-      type: 'object',
-      properties: {
+    inputSchema: objectSchema(
+      {
         name: { type: 'string', description: 'Name of the food item' },
         description: { type: 'string', description: 'Optional description (e.g. Lunch)' },
         calories: { type: 'number', description: 'Calories (kcal)' },
@@ -72,15 +81,14 @@ export const tools: Tool[] = [
         iconBg: { type: 'string', description: 'Background color hex (default #f4f4f5)' },
         iconColor: { type: 'string', description: 'Icon color hex (default #71717a)' },
       },
-      required: ['name', 'calories', 'protein'],
-    },
+      ['name', 'calories', 'protein'],
+    ),
   },
   {
     name: 'update_food_entry',
     description: 'Update an existing food entry by id',
-    inputSchema: {
-      type: 'object',
-      properties: {
+    inputSchema: objectSchema(
+      {
         id: { type: 'string', description: 'ID of the entry to update' },
         name: { type: 'string' },
         description: { type: 'string' },
@@ -92,37 +100,37 @@ export const tools: Tool[] = [
         iconBg: { type: 'string' },
         iconColor: { type: 'string' },
       },
-      required: ['id'],
-    },
+      ['id'],
+    ),
   },
   {
     name: 'delete_food_entry',
     description: 'Delete a food entry by id',
-    inputSchema: {
-      type: 'object',
-      properties: { id: { type: 'string', description: 'ID of the entry to delete' } },
-      required: ['id'],
-    },
+    inputSchema: objectSchema(
+      { id: { type: 'string', description: 'ID of the entry to delete' } },
+      ['id'],
+    ),
   },
   {
     name: 'get_daily_totals',
     description: 'Get the summed daily totals and remaining goals for today',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        date: {
-          type: 'string',
-          description: 'ISO date (YYYY-MM-DD) to filter on. Defaults to today.',
-        },
+    inputSchema: objectSchema({
+      date: {
+        type: 'string',
+        description: 'ISO date (YYYY-MM-DD) to filter on. Defaults to today.',
       },
-    },
+    }),
   },
 ]
 
 export function createServer(supabase: NutritionSupabase): Server {
   const server = new Server(
     { name: 'nutrition-tracker', version: '1.0.0' },
-    { capabilities: { tools: {} } },
+    {
+      capabilities: { tools: { listChanged: false } },
+      instructions:
+        'Nutrition Tracker food log tools. Use list_food_entries and get_daily_totals to read logs; add_food_entry, update_food_entry, and delete_food_entry to modify them. All data is scoped to the signed-in user.',
+    },
   )
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }))

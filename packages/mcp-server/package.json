@@ -17,6 +17,10 @@
     "./oauth": {
       "types": "./dist/oauth/index.d.ts",
       "default": "./dist/oauth/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
     }
   },
   "files": [

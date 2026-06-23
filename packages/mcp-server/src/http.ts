@@ -90,6 +90,7 @@ export async function handleMcp(request: Request, env: McpEnv): Promise<Response
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
+    enableJsonResponse: true,
   })
   const server = createServer(supabase)
 

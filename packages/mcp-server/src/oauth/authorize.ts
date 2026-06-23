@@ -173,6 +173,7 @@ export async function handleAuthorize(request: Request, env: OAuthEnv): Promise<
 
     const redirect = new URL(parsed.redirect_uri)
     redirect.searchParams.set('code', code)
+    redirect.searchParams.set('iss', env.MCP_PUBLIC_URL.replace(/\/$/, ''))
     if (parsed.state) redirect.searchParams.set('state', parsed.state)
     return Response.redirect(redirect.toString(), 302)
   }

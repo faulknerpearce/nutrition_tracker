@@ -4,7 +4,9 @@ export { handleToken } from './token.js'
 export {
   authorizationServerMetadata,
   handleAuthorizationServerMetadata,
+  handleOpenIdConfigurationMetadata,
   handleProtectedResourceMetadata,
+  openIdConfigurationMetadata,
   protectedResourceMetadata,
   wwwAuthenticateHeader,
 } from './metadata.js'
