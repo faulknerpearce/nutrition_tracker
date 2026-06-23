@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Install, typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build shared
+        run: npm run build:shared
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build web
+        run: npm run build
+        env:
+          # CI doesn't talk to Supabase; the dev middleware bails when
+          # SUPABASE_SERVICE_ROLE_KEY is missing, so the Vite build still
+          # succeeds because the middleware is dev-only (apply: 'serve').
+          SUPABASE_SERVICE_ROLE_KEY: ''
+          VITE_NUTRITION_API_TOKEN: ci-placeholder

@@ -1,0 +1,28 @@
+{
+  "name": "nutrition-tracker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @nutrition-tracker/shared",
+    "dev": "npm run build:shared && npm run dev -w @nutrition-tracker/web",
+    "dev:mcp": "npm run build:shared && npm run dev -w @nutrition-tracker/mcp-server",
+    "prebuild": "npm run build:shared",
+    "build": "npm run build -w @nutrition-tracker/web",
+    "pretypecheck": "npm run build:shared",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint -w @nutrition-tracker/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "prettier": "3.4.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,17 @@
+name = "nutrition-tracker"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+# Static assets
+[build]
+command = "npm run build"
+
+# Environment variables (non-secret)
+[vars]
+# SUPABASE_URL and SUPABASE_ANON_KEY are set as encrypted secrets via:
+#   wrangler pages secret put SUPABASE_URL
+#   wrangler pages secret put SUPABASE_ANON_KEY
+#
+# VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are build-time vars for the
+# client bundle (set in CI or locally before npm run build).
