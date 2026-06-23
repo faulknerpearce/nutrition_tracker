@@ -9,6 +9,8 @@ describe('validateEntry', () => {
     protein: 40,
     carbs: 50,
     caffeine: 0,
+    fat: 0,
+    fiber: 0,
   }
 
   it('accepts a fully-valid entry', () => {

@@ -15,6 +15,8 @@ export interface EntryInput {
   protein: number
   carbs: number
   caffeine: number
+  fat: number
+  fiber: number
 }
 
 export function validateEntry(input: Partial<EntryInput>): ValidationResult<EntryInput> {
@@ -33,6 +35,12 @@ export function validateEntry(input: Partial<EntryInput>): ValidationResult<Entr
   if (input.caffeine !== undefined && !isNonNegativeNumber(input.caffeine)) {
     return { ok: false, error: 'caffeine must be a non-negative number' }
   }
+  if (input.fat !== undefined && !isNonNegativeNumber(input.fat)) {
+    return { ok: false, error: 'fat must be a non-negative number' }
+  }
+  if (input.fiber !== undefined && !isNonNegativeNumber(input.fiber)) {
+    return { ok: false, error: 'fiber must be a non-negative number' }
+  }
   return {
     ok: true,
     value: {
@@ -42,6 +50,8 @@ export function validateEntry(input: Partial<EntryInput>): ValidationResult<Entr
       protein: input.protein,
       carbs: input.carbs ?? 0,
       caffeine: input.caffeine ?? 0,
+      fat: input.fat ?? 0,
+      fiber: input.fiber ?? 0,
     },
   }
 }

@@ -1,3 +1,5 @@
+import type { NutritionGoals } from './goals.js'
+
 export type Database = {
   public: {
     Tables: {
@@ -14,6 +16,8 @@ export type Database = {
           protein: number
           carbs: number
           caffeine: number
+          fat: number
+          fiber: number
           created_at: string
           entry_date: string
         }
@@ -29,6 +33,8 @@ export type Database = {
           protein: number
           carbs?: number
           caffeine?: number
+          fat?: number
+          fiber?: number
           created_at?: string
           entry_date?: string
         }
@@ -44,6 +50,8 @@ export type Database = {
           protein?: number
           carbs?: number
           caffeine?: number
+          fat?: number
+          fiber?: number
           created_at?: string
           entry_date?: string
         }
@@ -111,16 +119,19 @@ export type Database = {
         Row: {
           id: string
           display_name: string
+          nutrition_goals: NutritionGoals
           created_at: string
         }
         Insert: {
           id: string
           display_name: string
+          nutrition_goals?: NutritionGoals
           created_at?: string
         }
         Update: {
           id?: string
           display_name?: string
+          nutrition_goals?: NutritionGoals
           created_at?: string
         }
         Relationships: [

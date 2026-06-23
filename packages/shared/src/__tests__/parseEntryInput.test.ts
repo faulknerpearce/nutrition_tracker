@@ -143,6 +143,8 @@ describe('buildInsertPayload', () => {
       protein: 10,
       carbs: 0,
       caffeine: 0,
+      fat: 0,
+      fiber: 0,
     })
   })
 

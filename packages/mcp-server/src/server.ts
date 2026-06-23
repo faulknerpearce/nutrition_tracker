@@ -10,8 +10,9 @@ import {
   buildActivityUpdatePayload,
   buildInsertPayload,
   buildUpdatePayload,
-  goals,
+  DEFAULT_NUTRITION_GOALS,
   mapActivityRow,
+  parseNutritionGoals,
   mapRow,
   parseActivityInput,
   parseEntryInput,
@@ -58,6 +59,17 @@ async function requireUserId(supabase: NutritionSupabase): Promise<string> {
   return user.id
 }
 
+async function fetchUserGoals(supabase: NutritionSupabase) {
+  const userId = await requireUserId(supabase)
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('nutrition_goals')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return parseNutritionGoals(data?.nutrition_goals ?? DEFAULT_NUTRITION_GOALS)
+}
+
 export const SERVER_NAME = 'nutrition_tracker'
 export const SERVER_VERSION = '1.0.0'
 
@@ -65,7 +77,7 @@ export const tools: Tool[] = [
   {
     name: 'list_food_entries',
     description:
-      'Nutrition Tracker: list food log entries and meals for a day (calories, protein, carbs, caffeine).',
+      'Nutrition Tracker: list food log entries and meals for a day (calories, protein, carbs, fat, fiber, caffeine).',
     inputSchema: objectSchema({
       date: {
         type: 'string',
@@ -84,6 +96,8 @@ export const tools: Tool[] = [
         calories: { type: 'number', description: 'Calories (kcal)' },
         protein: { type: 'number', description: 'Protein in grams' },
         carbs: { type: 'number', description: 'Carbohydrates in grams' },
+        fat: { type: 'number', description: 'Fat in grams (default 0)' },
+        fiber: { type: 'number', description: 'Fiber in grams (default 0)' },
         caffeine: { type: 'number', description: 'Caffeine in mg (default 0)' },
         icon: { type: 'string', description: 'Font Awesome icon class (default fa-utensils)' },
         iconBg: { type: 'string', description: 'Background color hex (default #f4f4f5)' },
@@ -103,6 +117,8 @@ export const tools: Tool[] = [
         calories: { type: 'number' },
         protein: { type: 'number' },
         carbs: { type: 'number' },
+        fat: { type: 'number' },
+        fiber: { type: 'number' },
         caffeine: { type: 'number' },
         icon: { type: 'string' },
         iconBg: { type: 'string' },
@@ -122,7 +138,7 @@ export const tools: Tool[] = [
   {
     name: 'get_daily_totals',
     description:
-      'Nutrition Tracker: get daily nutrition totals (calories, protein, carbs, caffeine) and remaining macro goals.',
+      'Nutrition Tracker: get daily nutrition totals (calories, protein, carbs, fat, fiber, caffeine) and remaining macro goals.',
     inputSchema: objectSchema({
       date: {
         type: 'string',
@@ -275,6 +291,8 @@ export function createServer(supabase: NutritionSupabase): Server {
             calories: typeof a.calories === 'number' ? a.calories : 0,
             protein: typeof a.protein === 'number' ? a.protein : 0,
             carbs: typeof a.carbs === 'number' ? a.carbs : 0,
+            fat: typeof a.fat === 'number' ? a.fat : 0,
+            fiber: typeof a.fiber === 'number' ? a.fiber : 0,
             caffeine: typeof a.caffeine === 'number' ? a.caffeine : 0,
           }
           if (typeof a.icon === 'string') partial.icon = a.icon
@@ -310,7 +328,10 @@ export function createServer(supabase: NutritionSupabase): Server {
             .eq('entry_date', date)
           if (error) throw error
           const totals = sumTotals((data ?? []).map(mapRow))
-          return { content: [{ type: 'text', text: JSON.stringify({ totals, goals, date }) }] }
+          const userGoals = await fetchUserGoals(supabase)
+          return {
+            content: [{ type: 'text', text: JSON.stringify({ totals, goals: userGoals, date }) }],
+          }
         }
 
         case 'list_activities': {

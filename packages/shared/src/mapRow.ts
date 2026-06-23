@@ -12,5 +12,7 @@ export function mapRow(row: FoodRow): FoodEntry {
     protein: row.protein,
     carbs: row.carbs,
     caffeine: row.caffeine,
+    fat: row.fat ?? 0,
+    fiber: row.fiber ?? 0,
   }
 }

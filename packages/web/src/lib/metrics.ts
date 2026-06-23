@@ -1,16 +1,17 @@
 import {
+  DEFAULT_NUTRITION_GOALS,
   sumTotals,
-  calGoal,
-  proGoal,
-  carbGoal,
-  caffeineGoal,
   type FoodEntry,
+  type NutritionGoals,
 } from '@nutrition-tracker/shared'
 import type { MetricConfig } from '../components/MetricCard'
 
 const fmtInt = (n: number) => n.toLocaleString()
 
-export function buildMetricConfigs(entries: readonly FoodEntry[]): MetricConfig[] {
+export function buildMetricConfigs(
+  entries: readonly FoodEntry[],
+  goals: NutritionGoals = DEFAULT_NUTRITION_GOALS,
+): MetricConfig[] {
   const totals = sumTotals(entries)
 
   return [
@@ -19,7 +20,7 @@ export function buildMetricConfigs(entries: readonly FoodEntry[]): MetricConfig[
       value: totals.calories,
       formatValue: fmtInt,
       unit: null,
-      goal: calGoal,
+      goal: goals.calories.value,
       formatGoal: fmtInt,
       color: '#ea580c',
       iconBg: '#fed7aa',
@@ -34,7 +35,7 @@ export function buildMetricConfigs(entries: readonly FoodEntry[]): MetricConfig[
       value: totals.protein,
       formatValue: (n) => `${n}`,
       unit: 'g',
-      goal: proGoal,
+      goal: goals.protein.value,
       formatGoal: (n) => `${n}`,
       color: '#059669',
       iconBg: '#d1fae5',
@@ -49,7 +50,7 @@ export function buildMetricConfigs(entries: readonly FoodEntry[]): MetricConfig[
       value: totals.carbs,
       formatValue: (n) => `${n}`,
       unit: 'g',
-      goal: carbGoal,
+      goal: goals.carbs.value,
       formatGoal: (n) => `${n}`,
       color: '#d97706',
       iconBg: '#fef3c7',
@@ -60,11 +61,41 @@ export function buildMetricConfigs(entries: readonly FoodEntry[]): MetricConfig[
       remaining: (v, g) => `${Math.max(g - v, 0)} g`,
     },
     {
+      label: 'Fat',
+      value: totals.fat,
+      formatValue: (n) => `${n}`,
+      unit: 'g',
+      goal: goals.fat.value,
+      formatGoal: (n) => `${n}`,
+      color: '#db2777',
+      iconBg: '#fce7f3',
+      iconClass: 'fa-bacon',
+      gradient: 'linear-gradient(to right, #db2777, #f472b6)',
+      rightLabel: 'of daily goal',
+      remainingSuffix: 'g',
+      remaining: (v, g) => `${Math.max(g - v, 0)} g`,
+    },
+    {
+      label: 'Fiber',
+      value: totals.fiber,
+      formatValue: (n) => `${n}`,
+      unit: 'g',
+      goal: goals.fiber.value,
+      formatGoal: (n) => `${n}`,
+      color: '#65a30d',
+      iconBg: '#ecfccb',
+      iconClass: 'fa-seedling',
+      gradient: 'linear-gradient(to right, #65a30d, #a3e635)',
+      rightLabel: 'of daily goal',
+      remainingSuffix: 'g',
+      remaining: (v, g) => `${Math.max(g - v, 0)} g`,
+    },
+    {
       label: 'Caffeine',
       value: totals.caffeine,
       formatValue: (n) => `${n}`,
       unit: 'mg',
-      goal: caffeineGoal,
+      goal: goals.caffeine.value,
       formatGoal: (n) => `${n}`,
       color: '#7c3aed',
       iconBg: '#ede9fe',

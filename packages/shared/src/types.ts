@@ -15,6 +15,8 @@ export interface FoodEntry {
   protein: number
   carbs: number
   caffeine: number
+  fat: number
+  fiber: number
 }
 
 export type NewFoodEntry = Omit<FoodEntry, 'id'>
@@ -25,6 +27,8 @@ export type Totals = {
   protein: number
   carbs: number
   caffeine: number
+  fat: number
+  fiber: number
 }
 
 export type ActivityRow = Database['public']['Tables']['activities']['Row']

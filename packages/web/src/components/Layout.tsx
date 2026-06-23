@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/useAuth'
 import { type AppRoute, routeHref } from '../lib/routing'
+import GoalsModal from './GoalsModal'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -16,6 +17,7 @@ const tabs: { route: AppRoute; label: string }[] = [
 export default function Layout({ children, activeTab }: LayoutProps) {
   const { user, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showGoalsModal, setShowGoalsModal] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const displayLabel =
     (user?.user_metadata?.display_name as string | undefined) ?? user?.email ?? 'Account'
@@ -156,6 +158,34 @@ export default function Layout({ children, activeTab }: LayoutProps) {
                     role="menuitem"
                     onClick={() => {
                       setMenuOpen(false)
+                      setShowGoalsModal(true)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#3f3f46',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fafafa'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    Daily Goals
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false)
                       void signOut()
                     }}
                     style={{
@@ -188,6 +218,7 @@ export default function Layout({ children, activeTab }: LayoutProps) {
       <main className="max-w-4xl mx-auto px-4" style={{ paddingTop: 32, paddingBottom: 64 }}>
         {children}
       </main>
+      {showGoalsModal && <GoalsModal onClose={() => setShowGoalsModal(false)} />}
     </div>
   )
 }

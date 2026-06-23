@@ -21,6 +21,8 @@ interface FormState {
   calories: string
   protein: string
   carbs: string
+  fat: string
+  fiber: string
   caffeine: string
 }
 
@@ -30,6 +32,8 @@ const EMPTY_FORM: FormState = {
   calories: '',
   protein: '',
   carbs: '',
+  fat: '',
+  fiber: '',
   caffeine: '',
 }
 
@@ -51,6 +55,8 @@ function formFromEntry(entry: FoodEntry): FormState {
     calories: String(entry.calories),
     protein: String(entry.protein),
     carbs: String(entry.carbs),
+    fat: String(entry.fat),
+    fiber: String(entry.fiber),
     caffeine: String(entry.caffeine),
   }
 }
@@ -104,6 +110,8 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
       calories: form.calories === '' ? NaN : parseInt(form.calories, 10),
       protein: form.protein === '' ? NaN : parseInt(form.protein, 10),
       carbs: form.carbs === '' ? 0 : parseInt(form.carbs, 10) || 0,
+      fat: form.fat === '' ? 0 : parseInt(form.fat, 10) || 0,
+      fiber: form.fiber === '' ? 0 : parseInt(form.fiber, 10) || 0,
       caffeine: form.caffeine === '' ? 0 : parseInt(form.caffeine, 10) || 0,
     }
 
@@ -275,6 +283,34 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
               min="0"
               value={form.carbs}
               onChange={(e) => update('carbs', e.target.value)}
+              placeholder="0"
+              style={inputBase}
+            />
+          </div>
+          <div>
+            <label htmlFor="entry-fat" style={labelBase}>
+              Fat (g)
+            </label>
+            <input
+              id="entry-fat"
+              type="number"
+              min="0"
+              value={form.fat}
+              onChange={(e) => update('fat', e.target.value)}
+              placeholder="0"
+              style={inputBase}
+            />
+          </div>
+          <div>
+            <label htmlFor="entry-fiber" style={labelBase}>
+              Fiber (g)
+            </label>
+            <input
+              id="entry-fiber"
+              type="number"
+              min="0"
+              value={form.fiber}
+              onChange={(e) => update('fiber', e.target.value)}
               placeholder="0"
               style={inputBase}
             />

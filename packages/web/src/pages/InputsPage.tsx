@@ -1,5 +1,6 @@
 import { formatDayLabel, sumTotals, todayISO } from '@nutrition-tracker/shared'
 import { useEffect, useState } from 'react'
+import { useNutritionGoals } from '../context/useGoals'
 import { pageTitle, sectionHeader as sectionLabelStyle } from '../lib/styles'
 import FoodLogSection from '../components/FoodLogSection'
 import MetricCard from '../components/MetricCard'
@@ -21,6 +22,7 @@ function updateDayEntries(days: DaySummary[], date: string, entries: FoodEntry[]
 }
 
 export default function InputsPage() {
+  const nutritionGoals = useNutritionGoals()
   const [days, setDays] = useState<DaySummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -172,7 +174,7 @@ export default function InputsPage() {
                   style={{ padding: '0 24px 24px', borderTop: '1px solid #f4f4f5' }}
                 >
                   <div className="metric-grid-2" style={{ paddingTop: 20, marginBottom: 24 }}>
-                    {buildMetricConfigs(day.entries).map((m) => (
+                    {buildMetricConfigs(day.entries, nutritionGoals).map((m) => (
                       <MetricCard key={m.label} config={m} />
                     ))}
                   </div>

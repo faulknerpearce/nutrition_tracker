@@ -11,6 +11,8 @@ export interface ParsedEntryInput {
   protein: number
   carbs: number
   caffeine: number
+  fat: number
+  fiber: number
 }
 
 const FALLBACK_ICON: IconOption = {
@@ -33,6 +35,8 @@ export function parseEntryInput(input: Record<string, unknown>):
     protein: typeof input.protein === 'number' ? Math.round(input.protein) : NaN,
     carbs: typeof input.carbs === 'number' ? Math.round(input.carbs) : 0,
     caffeine: typeof input.caffeine === 'number' ? Math.round(input.caffeine) : 0,
+    fat: typeof input.fat === 'number' ? Math.round(input.fat) : 0,
+    fiber: typeof input.fiber === 'number' ? Math.round(input.fiber) : 0,
   }
 
   const validated = validateEntry(candidate)
@@ -59,6 +63,8 @@ export function buildUpdatePayload(input: ParsedEntryInput): {
   protein: number
   carbs: number
   caffeine: number
+  fat: number
+  fiber: number
 } {
   return {
     icon: input.icon,
@@ -70,6 +76,8 @@ export function buildUpdatePayload(input: ParsedEntryInput): {
     protein: input.protein,
     carbs: input.carbs,
     caffeine: input.caffeine,
+    fat: input.fat,
+    fiber: input.fiber,
   }
 }
 
@@ -89,6 +97,8 @@ export function buildInsertPayload(
   protein: number
   carbs: number
   caffeine: number
+  fat: number
+  fiber: number
 } {
   return {
     id,
@@ -102,5 +112,7 @@ export function buildInsertPayload(
     protein: input.protein,
     carbs: input.carbs,
     caffeine: input.caffeine,
+    fat: input.fat,
+    fiber: input.fiber,
   }
 }

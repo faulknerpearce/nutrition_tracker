@@ -1,12 +1,12 @@
 import {
   computeNetBalance,
   formatDuration,
-  goals,
   sumActivityTotals,
   sumTotals,
   todayISO,
 } from '@nutrition-tracker/shared'
 import { useEffect, useState } from 'react'
+import { useNutritionGoals } from '../context/useGoals'
 import { pageTitle, sectionHeader as sectionLabelStyle } from '../lib/styles'
 import ActivityMetricCard from '../components/ActivityMetricCard'
 import DashboardPreviewList, { PreviewEmpty, PreviewRow } from '../components/DashboardPreviewList'
@@ -78,6 +78,7 @@ function SectionHeader({
 }
 
 export default function Dashboard() {
+  const nutritionGoals = useNutritionGoals()
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
@@ -130,8 +131,13 @@ export default function Dashboard() {
 
   const foodTotals = sumTotals(entries)
   const activityTotals = sumActivityTotals(activities)
-  const balance = computeNetBalance(foodTotals.calories, activityTotals.calories)
-  const inputMetrics = buildMetricConfigs(entries)
+  const balance = computeNetBalance(
+    foodTotals.calories,
+    activityTotals.calories,
+    nutritionGoals.calories.low,
+    nutritionGoals.calories.high,
+  )
+  const inputMetrics = buildMetricConfigs(entries, nutritionGoals)
   const outputMetrics = buildActivityMetricConfigs(activities)
   const recentEntries = [...entries].slice(-3).reverse()
   const recentActivities = [...activities].slice(-3).reverse()
@@ -144,9 +150,12 @@ export default function Dashboard() {
           Dashboard
         </h2>
         <p style={{ fontSize: 12, color: '#71717a', margin: '8px 0 0 0' }}>
-          {todayISO()} · Target: {formatRange(goals.calories.low, goals.calories.high, 'kcal')} •{' '}
-          {formatRange(goals.protein.low, goals.protein.high, 'g protein')} • ~{goals.carbs.value}g
-          carbs • {formatCaffeineLimit(goals.caffeine.value, 'mg caffeine')}
+          {todayISO()} · Target:{' '}
+          {formatRange(nutritionGoals.calories.low, nutritionGoals.calories.high, 'kcal')} •{' '}
+          {formatRange(nutritionGoals.protein.low, nutritionGoals.protein.high, 'g protein')} • ~
+          {nutritionGoals.carbs.value}g carbs • ~{nutritionGoals.fat.value}g fat • ~
+          {nutritionGoals.fiber.value}g fiber •{' '}
+          {formatCaffeineLimit(nutritionGoals.caffeine.value, 'mg caffeine')}
         </p>
       </div>
 

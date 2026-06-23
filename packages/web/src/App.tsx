@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
 import { AuthProvider } from './context/AuthProvider'
+import { GoalsProvider } from './context/GoalsProvider'
 import { useAuth } from './context/useAuth'
 import { parseHashRoute } from './lib/routing'
 import AuthPage from './pages/AuthPage'
@@ -41,9 +42,11 @@ function AppContent() {
   }
 
   return (
-    <Layout activeTab={route}>
-      {route === 'inputs' ? <InputsPage /> : route === 'outputs' ? <OutputsPage /> : <Dashboard />}
-    </Layout>
+    <GoalsProvider>
+      <Layout activeTab={route}>
+        {route === 'inputs' ? <InputsPage /> : route === 'outputs' ? <OutputsPage /> : <Dashboard />}
+      </Layout>
+    </GoalsProvider>
   )
 }
 

@@ -14,6 +14,9 @@ function makeRow(overrides: Partial<FoodRow> = {}): FoodRow {
     protein: 7,
     carbs: 9,
     caffeine: 130,
+    fat: 4,
+    fiber: 1,
+    user_id: 'user-1',
     created_at: '2026-06-22T08:00:00Z',
     entry_date: '2026-06-22',
     ...overrides,
@@ -42,6 +45,8 @@ describe('mapRow', () => {
       protein: 7,
       carbs: 9,
       caffeine: 130,
+      fat: 4,
+      fiber: 1,
     })
   })
 

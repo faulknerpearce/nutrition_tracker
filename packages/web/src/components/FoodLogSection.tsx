@@ -214,6 +214,18 @@ export default function FoodLogSection({
                         <span style={{ fontWeight: 500, color: '#d97706' }}>{item.carbs}g</span>{' '}
                         <span style={{ color: '#a1a1aa' }}>carbs</span>
                       </span>
+                      {item.fat > 0 && (
+                        <span>
+                          <span style={{ fontWeight: 500, color: '#db2777' }}>{item.fat}g</span>{' '}
+                          <span style={{ color: '#a1a1aa' }}>fat</span>
+                        </span>
+                      )}
+                      {item.fiber > 0 && (
+                        <span>
+                          <span style={{ fontWeight: 500, color: '#65a30d' }}>{item.fiber}g</span>{' '}
+                          <span style={{ color: '#a1a1aa' }}>fiber</span>
+                        </span>
+                      )}
                       {item.caffeine > 0 && (
                         <span>
                           <span style={{ fontWeight: 500, color: '#7c3aed' }}>

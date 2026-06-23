@@ -14,22 +14,31 @@ function makeEntry(overrides: Partial<FoodEntry> = {}): FoodEntry {
     protein: 0,
     carbs: 0,
     caffeine: 0,
+    fat: 0,
+    fiber: 0,
     ...overrides,
   }
 }
 
 describe('sumTotals', () => {
   it('returns all zeros for an empty list', () => {
-    expect(sumTotals([])).toEqual({ calories: 0, protein: 0, carbs: 0, caffeine: 0 })
+    expect(sumTotals([])).toEqual({
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      caffeine: 0,
+      fat: 0,
+      fiber: 0,
+    })
   })
 
   it('returns the values of a single entry', () => {
     expect(sumTotals([makeEntry({ calories: 100, protein: 10, carbs: 20, caffeine: 50 })])).toEqual(
-      { calories: 100, protein: 10, carbs: 20, caffeine: 50 },
+      { calories: 100, protein: 10, carbs: 20, caffeine: 50, fat: 0, fiber: 0 },
     )
   })
 
-  it('sums all four fields across multiple entries', () => {
+  it('sums all macro fields across multiple entries', () => {
     const entries = [
       makeEntry({ calories: 100, protein: 10, carbs: 20, caffeine: 50 }),
       makeEntry({ calories: 250, protein: 25, carbs: 40, caffeine: 0 }),
@@ -40,6 +49,8 @@ describe('sumTotals', () => {
       protein: 40,
       carbs: 75,
       caffeine: 150,
+      fat: 0,
+      fiber: 0,
     })
   })
 
@@ -56,6 +67,13 @@ describe('sumTotals', () => {
       calories: 100,
       protein: 10,
     }
-    expect(sumTotals([partial])).toEqual({ calories: 100, protein: 10, carbs: 0, caffeine: 0 })
+    expect(sumTotals([partial])).toEqual({
+      calories: 100,
+      protein: 10,
+      carbs: 0,
+      caffeine: 0,
+      fat: 0,
+      fiber: 0,
+    })
   })
 })
