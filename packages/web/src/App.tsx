@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import InputsPage from './pages/InputsPage'
 import OutputsPage from './pages/OutputsPage'
 import ProfilePage from './pages/ProfilePage'
+import RecipesPage from './pages/RecipesPage'
 
 function useHashRoute() {
   const [route, setRoute] = useState(() => parseHashRoute(window.location.hash))
@@ -49,6 +50,8 @@ function AppContent() {
           <ProfilePage />
         ) : route === 'inputs' ? (
           <InputsPage />
+        ) : route === 'recipes' ? (
+          <RecipesPage />
         ) : route === 'outputs' ? (
           <OutputsPage />
         ) : (

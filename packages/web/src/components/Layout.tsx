@@ -11,6 +11,7 @@ interface LayoutProps {
 const tabs: { route: AppRoute; label: string }[] = [
   { route: 'dashboard', label: 'Dashboard' },
   { route: 'inputs', label: 'Inputs' },
+  { route: 'recipes', label: 'Recipes' },
   { route: 'outputs', label: 'Outputs' },
 ]
 

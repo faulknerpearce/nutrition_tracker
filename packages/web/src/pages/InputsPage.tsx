@@ -13,6 +13,7 @@ import {
   type FoodEntry,
   type NewFoodEntry,
 } from '../lib/entries'
+import { logRecipe, saveRecipe } from '../lib/recipes'
 import { buildMetricConfigs } from '../lib/metrics'
 
 function updateDayEntries(days: DaySummary[], date: string, entries: FoodEntry[]): DaySummary[] {
@@ -40,8 +41,46 @@ export default function InputsPage() {
       })
   }, [])
 
-  async function persistAdd(input: NewFoodEntry) {
+  async function persistAdd(
+    input: NewFoodEntry,
+    options?: { saveAsRecipe?: boolean },
+  ) {
     const entry = await addEntry(input)
+    if (options?.saveAsRecipe) {
+      await saveRecipe({
+        name: input.name,
+        description: input.description,
+        icon: input.icon,
+        iconBg: input.iconBg,
+        iconColor: input.iconColor,
+        defaultServings: 1,
+        ingredients: [
+          {
+            name: input.name,
+            amount: '',
+            sortOrder: 0,
+            calories: input.calories,
+            protein: input.protein,
+            carbs: input.carbs,
+            fat: input.fat,
+            fiber: input.fiber,
+            caffeine: input.caffeine,
+          },
+        ],
+      })
+    }
+    const today = todayISO()
+    setDays((prev) => {
+      const existing = prev.find((day) => day.date === today)
+      if (existing) {
+        return updateDayEntries(prev, today, [...existing.entries, entry])
+      }
+      return [{ date: today, entries: [entry], totals: sumTotals([entry]) }, ...prev]
+    })
+  }
+
+  async function persistLogRecipe(recipeId: string, servings: number) {
+    const entry = await logRecipe({ recipeId, servings })
     const today = todayISO()
     setDays((prev) => {
       const existing = prev.find((day) => day.date === today)
@@ -181,6 +220,7 @@ export default function InputsPage() {
                   <FoodLogSection
                     entries={day.entries}
                     onAdd={isToday ? persistAdd : undefined}
+                    onLogRecipe={isToday ? persistLogRecipe : undefined}
                     onEdit={persistUpdate}
                     onDelete={persistDelete}
                     title={`${formatDayLabel(day.date)} Food Log`}

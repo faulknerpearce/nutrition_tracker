@@ -20,6 +20,8 @@ export type Database = {
           fiber: number
           created_at: string
           entry_date: string
+          recipe_id: string | null
+          servings_logged: number | null
         }
         Insert: {
           id?: string
@@ -37,6 +39,8 @@ export type Database = {
           fiber?: number
           created_at?: string
           entry_date?: string
+          recipe_id?: string | null
+          servings_logged?: number | null
         }
         Update: {
           id?: string
@@ -54,10 +58,129 @@ export type Database = {
           fiber?: number
           created_at?: string
           entry_date?: string
+          recipe_id?: string | null
+          servings_logged?: number | null
         }
         Relationships: [
           {
             foreignKeyName: 'food_entries_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'food_entries_recipe_id_fkey'
+            columns: ['recipe_id']
+            isOneToOne: false
+            referencedRelation: 'recipes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string
+          icon: string
+          icon_bg: string
+          icon_color: string
+          default_servings: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          description?: string
+          icon?: string
+          icon_bg?: string
+          icon_color?: string
+          default_servings?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string
+          icon?: string
+          icon_bg?: string
+          icon_color?: string
+          default_servings?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'recipes_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      recipe_ingredients: {
+        Row: {
+          id: string
+          recipe_id: string
+          user_id: string
+          sort_order: number
+          name: string
+          amount: string
+          calories: number
+          protein: number
+          carbs: number
+          fat: number
+          fiber: number
+          caffeine: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          recipe_id: string
+          user_id: string
+          sort_order?: number
+          name: string
+          amount?: string
+          calories?: number
+          protein?: number
+          carbs?: number
+          fat?: number
+          fiber?: number
+          caffeine?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          recipe_id?: string
+          user_id?: string
+          sort_order?: number
+          name?: string
+          amount?: string
+          calories?: number
+          protein?: number
+          carbs?: number
+          fat?: number
+          fiber?: number
+          caffeine?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'recipe_ingredients_recipe_id_fkey'
+            columns: ['recipe_id']
+            isOneToOne: false
+            referencedRelation: 'recipes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recipe_ingredients_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'users'

@@ -74,14 +74,17 @@ export async function fetchDaySummaries(daysBack = 30): Promise<DaySummary[]> {
     }))
 }
 
-export async function addEntry(input: NewFoodEntry): Promise<FoodEntry> {
+export async function addEntry(
+  input: NewFoodEntry,
+  options?: { entryDate?: string },
+): Promise<FoodEntry> {
   const userId = await requireUserId()
   const parsed = parseEntryInput(input as Record<string, unknown>)
   if (!parsed.ok) throw new Error(parsed.error)
 
   const entry = {
     ...buildInsertPayload(parsed.value, crypto.randomUUID(), userId),
-    entry_date: todayISO(),
+    entry_date: options?.entryDate ?? todayISO(),
   }
   const { data, error } = await supabase.from('food_entries').insert(entry).select().single()
   if (error) throw new Error(error.message)

@@ -20,6 +20,13 @@ import {
   updateActivity,
   updateFoodEntry,
 } from './toolHandlers.js'
+import {
+  deleteRecipe,
+  getRecipe,
+  listRecipes,
+  logRecipeEntry,
+  saveRecipe,
+} from './recipeHandlers.js'
 
 export { createAuthenticatedSupabase, type NutritionSupabase } from './supabase.js'
 
@@ -90,7 +97,7 @@ function resolveRequiredLogDateArg(value: unknown): string {
 }
 
 export const SERVER_NAME = 'nutrition_tracker'
-export const SERVER_VERSION = '1.1.0'
+export const SERVER_VERSION = '1.2.0'
 
 export const tools: Tool[] = [
   {
@@ -229,6 +236,73 @@ export const tools: Tool[] = [
       ['date', 'action'],
     ),
   },
+  {
+    name: 'list_recipes',
+    description:
+      'Nutrition Tracker: list saved meal recipes with per-serving macro totals and ingredient counts.',
+    inputSchema: objectSchema({}),
+  },
+  {
+    name: 'get_recipe',
+    description: 'Nutrition Tracker: get a saved recipe with all ingredient lines and macro totals.',
+    inputSchema: objectSchema(
+      { id: { type: 'string', description: 'Recipe id' } },
+      ['id'],
+    ),
+  },
+  {
+    name: 'save_recipe',
+    description:
+      'Nutrition Tracker: create or update a saved recipe and its ingredient lines. Pass id to update.',
+    inputSchema: objectSchema({
+      id: { type: 'string', description: 'Recipe id when updating' },
+      name: { type: 'string', description: 'Recipe name' },
+      description: { type: 'string', description: 'Optional description' },
+      defaultServings: {
+        type: 'number',
+        description: 'How many servings the ingredient batch yields',
+      },
+      icon: { type: 'string' },
+      iconBg: { type: 'string' },
+      iconColor: { type: 'string' },
+      ingredients: {
+        type: 'array',
+        description: 'Ingredient lines that sum to the full recipe batch',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            amount: { type: 'string' },
+            calories: { type: 'number' },
+            protein: { type: 'number' },
+            carbs: { type: 'number' },
+            fat: { type: 'number' },
+            fiber: { type: 'number' },
+            caffeine: { type: 'number' },
+          },
+          required: ['name', 'calories', 'protein'],
+        },
+      },
+    }, ['name', 'ingredients']),
+  },
+  {
+    name: 'delete_recipe',
+    description: 'Nutrition Tracker: delete a saved recipe by id.',
+    inputSchema: objectSchema({ id: { type: 'string', description: 'Recipe id' } }, ['id']),
+  },
+  {
+    name: 'log_recipe',
+    description:
+      'Nutrition Tracker: log one food entry from a saved recipe with servings scaling. Creates a single aggregated food log row.',
+    inputSchema: objectSchema(
+      {
+        recipeId: { type: 'string', description: 'Recipe id to log' },
+        servings: { type: 'number', description: 'Number of servings to log (default 1)' },
+        date: dateProperty,
+      },
+      ['recipeId'],
+    ),
+  },
 ]
 
 export function createServer(supabase: NutritionSupabase): Server {
@@ -248,7 +322,10 @@ export function createServer(supabase: NutritionSupabase): Server {
         t.name === 'manage_day_log',
     )
     .map((t) => t.name)
-  const instructions = `Nutrition Tracker tools for food inputs and activity outputs. Food: ${foodTools.join(', ')}. Activities: ${activityTools.join(', ')}. Use manage_day_log or pass date on add/update tools to work with past days. All data is scoped to the signed-in user.`
+  const recipeTools = tools
+    .filter((t) => t.name.endsWith('_recipe') || t.name === 'list_recipes')
+    .map((t) => t.name)
+  const instructions = `Nutrition Tracker tools for food inputs, saved recipes, and activity outputs. Food: ${foodTools.join(', ')}. Recipes: ${recipeTools.join(', ')}. Activities: ${activityTools.join(', ')}. Use log_recipe or add_food_entry to log meals. All data is scoped to the signed-in user.`
 
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -333,6 +410,33 @@ export function createServer(supabase: NutritionSupabase): Server {
           }
           const result = await manageDayLog(supabase, date, a.action, a)
           return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+        }
+
+        case 'list_recipes': {
+          const recipes = await listRecipes(supabase)
+          return { content: [{ type: 'text', text: JSON.stringify(recipes) }] }
+        }
+
+        case 'get_recipe': {
+          if (typeof a.id !== 'string' || a.id === '') throw new Error('id is required')
+          const recipe = await getRecipe(supabase, a.id)
+          return { content: [{ type: 'text', text: JSON.stringify(recipe) }] }
+        }
+
+        case 'save_recipe': {
+          const recipe = await saveRecipe(supabase, a)
+          return { content: [{ type: 'text', text: JSON.stringify(recipe) }] }
+        }
+
+        case 'delete_recipe': {
+          if (typeof a.id !== 'string' || a.id === '') throw new Error('id is required')
+          const result = await deleteRecipe(supabase, a.id)
+          return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+        }
+
+        case 'log_recipe': {
+          const entry = await logRecipeEntry(supabase, a)
+          return { content: [{ type: 'text', text: JSON.stringify(entry) }] }
         }
 
         default:

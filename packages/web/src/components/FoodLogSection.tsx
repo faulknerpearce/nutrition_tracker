@@ -4,7 +4,8 @@ import AddEntryModal from './AddEntryModal'
 
 interface FoodLogSectionProps {
   entries: FoodEntry[]
-  onAdd?: (entry: NewFoodEntry) => Promise<void>
+  onAdd?: (entry: NewFoodEntry, options?: { saveAsRecipe?: boolean }) => Promise<void>
+  onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
   onEdit?: (id: string, entry: NewFoodEntry) => Promise<void>
   onDelete?: (id: string) => Promise<void>
   readOnly?: boolean
@@ -16,6 +17,7 @@ interface FoodLogSectionProps {
 export default function FoodLogSection({
   entries,
   onAdd,
+  onLogRecipe,
   onEdit,
   onDelete,
   readOnly = false,
@@ -370,7 +372,11 @@ export default function FoodLogSection({
       )}
 
       {showAddForm && onAdd && (
-        <AddEntryModal onAdd={onAdd} onClose={() => setShowAddForm(false)} />
+        <AddEntryModal
+          onAdd={onAdd}
+          onLogRecipe={onLogRecipe}
+          onClose={() => setShowAddForm(false)}
+        />
       )}
       {editingEntry && onEdit && (
         <AddEntryModal

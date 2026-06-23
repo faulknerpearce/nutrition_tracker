@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   iconOptions,
+  scaleRecipeToServings,
   validateEntry,
   type FoodEntry,
   type IconOption,
   type NewFoodEntry,
+  type RecipeSummary,
 } from '@nutrition-tracker/shared'
+import { fetchRecipeSummaries } from '../lib/recipes'
 import { inputBase, labelBase } from '../lib/styles'
 import Modal from './Modal'
 
+type AddMode = 'manual' | 'recipe'
+
 interface AddEntryModalProps {
   entry?: FoodEntry
-  onAdd: (entry: NewFoodEntry) => Promise<void>
+  onAdd: (entry: NewFoodEntry, options?: { saveAsRecipe?: boolean }) => Promise<void>
+  onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
   onClose: () => void
 }
 
@@ -61,16 +67,35 @@ function formFromEntry(entry: FoodEntry): FormState {
   }
 }
 
-export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalProps) {
+export default function AddEntryModal({
+  entry,
+  onAdd,
+  onLogRecipe,
+  onClose,
+}: AddEntryModalProps) {
   const isEdit = entry !== undefined
+  const [mode, setMode] = useState<AddMode>('manual')
   const [form, setForm] = useState<FormState>(() => (entry ? formFromEntry(entry) : EMPTY_FORM))
   const [selectedIcon, setSelectedIcon] = useState<IconOption>(() =>
     entry ? iconFromEntry(entry) : iconOptions[0],
   )
+  const [saveAsRecipe, setSaveAsRecipe] = useState(false)
+  const [recipes, setRecipes] = useState<RecipeSummary[]>([])
+  const [selectedRecipeId, setSelectedRecipeId] = useState('')
+  const [recipeServings, setRecipeServings] = useState('1')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
+  const previewTotals =
+    selectedRecipe && recipeServings !== ''
+      ? scaleRecipeToServings(
+          selectedRecipe.batchTotals,
+          selectedRecipe.defaultServings,
+          Number.parseFloat(recipeServings) || 0,
+        )
+      : null
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null
@@ -91,6 +116,18 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
     // so the listener is torn down and the next mount gets the latest value.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (isEdit || mode !== 'recipe') return
+    fetchRecipeSummaries()
+      .then((data) => {
+        setRecipes(data)
+        setSelectedRecipeId((current) => current || data[0]?.id || '')
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load recipes')
+      })
+  }, [isEdit, mode])
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -124,15 +161,42 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
     setAdding(true)
     setError(null)
     try {
-      await onAdd({
-        icon: selectedIcon.icon,
-        iconBg: selectedIcon.bg,
-        iconColor: selectedIcon.color,
-        ...validated.value,
-      })
+      await onAdd(
+        {
+          icon: selectedIcon.icon,
+          iconBg: selectedIcon.bg,
+          iconColor: selectedIcon.color,
+          ...validated.value,
+        },
+        { saveAsRecipe },
+      )
       close()
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to ${isEdit ? 'update' : 'add'} entry`)
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const submitRecipe = async () => {
+    if (!onLogRecipe) return
+    if (!selectedRecipeId) {
+      setError('Select a recipe')
+      return
+    }
+    const servings = Number.parseFloat(recipeServings)
+    if (!Number.isFinite(servings) || servings <= 0) {
+      setError('Servings must be greater than 0')
+      return
+    }
+
+    setAdding(true)
+    setError(null)
+    try {
+      await onLogRecipe(selectedRecipeId, servings)
+      close()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to log recipe')
     } finally {
       setAdding(false)
     }
@@ -157,6 +221,30 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
             : "Log a new food item to today's entries."}
         </p>
 
+        {!isEdit && onLogRecipe && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            {(['manual', 'recipe'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMode(value)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 9999,
+                  border: mode === value ? '1px solid #134e4b' : '1px solid #e4e4e7',
+                  background: mode === value ? '#134e4b' : 'white',
+                  color: mode === value ? 'white' : '#52525b',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                {value === 'manual' ? 'Manual' : 'From Recipe'}
+              </button>
+            ))}
+          </div>
+        )}
+
         {error && (
           <div
             role="alert"
@@ -173,6 +261,96 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
           </div>
         )}
 
+        {!isEdit && mode === 'recipe' ? (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="entry-recipe" style={labelBase}>
+                Saved recipe
+              </label>
+              <select
+                id="entry-recipe"
+                value={selectedRecipeId}
+                onChange={(e) => setSelectedRecipeId(e.target.value)}
+                style={{ ...inputBase, paddingRight: 12 }}
+              >
+                {recipes.length === 0 ? (
+                  <option value="">No recipes yet</option>
+                ) : (
+                  recipes.map((recipe) => (
+                    <option key={recipe.id} value={recipe.id}>
+                      {recipe.name} ({recipe.perServingTotals.calories} kcal/serving)
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="entry-recipe-servings" style={labelBase}>
+                Servings to log
+              </label>
+              <input
+                id="entry-recipe-servings"
+                type="number"
+                min="0.25"
+                step="0.25"
+                value={recipeServings}
+                onChange={(e) => setRecipeServings(e.target.value)}
+                style={inputBase}
+              />
+            </div>
+            {previewTotals && (
+              <div
+                style={{
+                  marginBottom: 24,
+                  padding: 16,
+                  borderRadius: 16,
+                  background: '#ecfdf5',
+                  color: '#065f46',
+                  fontSize: 13,
+                }}
+              >
+                This log will add {previewTotals.calories} kcal, {previewTotals.protein}g protein,{' '}
+                {previewTotals.carbs}g carbs.
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={close}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 9999,
+                  border: '1px solid #e4e4e7',
+                  background: 'white',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  color: '#52525b',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitRecipe}
+                disabled={adding || recipes.length === 0}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 9999,
+                  border: 'none',
+                  background: adding || recipes.length === 0 ? '#6b7280' : '#134e4b',
+                  color: 'white',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                {adding ? 'Logging...' : 'Log Recipe'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
         <div style={{ marginBottom: 20 }}>
           <label htmlFor="entry-icon" style={labelBase}>
             Icon
@@ -331,6 +509,26 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
           </div>
         </div>
 
+        {!isEdit && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 24,
+              fontSize: 13,
+              color: '#52525b',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={saveAsRecipe}
+              onChange={(e) => setSaveAsRecipe(e.target.checked)}
+            />
+            Save as recipe for quick logging later
+          </label>
+        )}
+
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button
             type="button"
@@ -366,6 +564,8 @@ export default function AddEntryModal({ entry, onAdd, onClose }: AddEntryModalPr
             {adding ? (isEdit ? 'Saving...' : 'Adding...') : isEdit ? 'Save Changes' : 'Add Entry'}
           </button>
         </div>
+          </>
+        )}
     </Modal>
   )
 }
