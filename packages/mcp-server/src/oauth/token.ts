@@ -24,6 +24,7 @@ function tokenResponse(accessToken: string, refreshToken: string, expiresIn = 36
     token_type: 'Bearer',
     expires_in: expiresIn,
     refresh_token: refreshToken,
+    scope: 'openid profile',
   })
 }
 

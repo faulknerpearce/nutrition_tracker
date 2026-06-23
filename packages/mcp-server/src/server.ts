@@ -55,10 +55,14 @@ async function requireUserId(supabase: NutritionSupabase): Promise<string> {
   return user.id
 }
 
+export const SERVER_NAME = 'nutrition_tracker'
+export const SERVER_VERSION = '1.0.0'
+
 export const tools: Tool[] = [
   {
     name: 'list_food_entries',
-    description: 'List all food log entries for today (entry_date = current date)',
+    description:
+      'Nutrition Tracker: list food log entries and meals for a day (calories, protein, carbs, caffeine).',
     inputSchema: objectSchema({
       date: {
         type: 'string',
@@ -68,7 +72,8 @@ export const tools: Tool[] = [
   },
   {
     name: 'add_food_entry',
-    description: "Add a new food entry to today's log",
+    description:
+      'Nutrition Tracker: add a food or meal entry to the daily nutrition log with calories and macros.',
     inputSchema: objectSchema(
       {
         name: { type: 'string', description: 'Name of the food item' },
@@ -86,7 +91,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'update_food_entry',
-    description: 'Update an existing food entry by id',
+    description: 'Nutrition Tracker: update an existing food log entry by id.',
     inputSchema: objectSchema(
       {
         id: { type: 'string', description: 'ID of the entry to update' },
@@ -105,7 +110,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'delete_food_entry',
-    description: 'Delete a food entry by id',
+    description: 'Nutrition Tracker: delete a food log entry by id.',
     inputSchema: objectSchema(
       { id: { type: 'string', description: 'ID of the entry to delete' } },
       ['id'],
@@ -113,7 +118,8 @@ export const tools: Tool[] = [
   },
   {
     name: 'get_daily_totals',
-    description: 'Get the summed daily totals and remaining goals for today',
+    description:
+      'Nutrition Tracker: get daily nutrition totals (calories, protein, carbs, caffeine) and remaining macro goals.',
     inputSchema: objectSchema({
       date: {
         type: 'string',
@@ -125,7 +131,7 @@ export const tools: Tool[] = [
 
 export function createServer(supabase: NutritionSupabase): Server {
   const server = new Server(
-    { name: 'nutrition-tracker', version: '1.0.0' },
+    { name: SERVER_NAME, version: SERVER_VERSION },
     {
       capabilities: { tools: { listChanged: false } },
       instructions:
