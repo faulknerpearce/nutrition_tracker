@@ -8,14 +8,13 @@ import {
 import { useEffect, useState } from 'react'
 import { useNutritionGoals } from '../context/useProfile'
 import { pageTitle, sectionHeader as sectionLabelStyle } from '../lib/styles'
-import ActivityMetricCard from '../components/ActivityMetricCard'
+import ActivityOverviewPanel from '../components/dashboard/ActivityOverviewPanel'
+import EnergyOverviewPanel from '../components/dashboard/EnergyOverviewPanel'
+import MacroSplitPanel from '../components/dashboard/MacroSplitPanel'
+import NutritionRingsPanel from '../components/dashboard/NutritionRingsPanel'
 import DashboardPreviewList, { PreviewEmpty, PreviewRow } from '../components/DashboardPreviewList'
-import MetricCard from '../components/MetricCard'
-import NetBalanceCard from '../components/NetBalanceCard'
 import { fetchActivities, type Activity } from '../lib/activities'
 import { type FoodEntry, fetchEntries } from '../lib/entries'
-import { buildActivityMetricConfigs } from '../lib/activityMetrics'
-import { buildMetricConfigs } from '../lib/metrics'
 import { routeHref } from '../lib/routing'
 
 function formatRange(low: number, high: number, unit: string): string {
@@ -137,8 +136,6 @@ export default function Dashboard() {
     nutritionGoals.calories.low,
     nutritionGoals.calories.high,
   )
-  const inputMetrics = buildMetricConfigs(entries, nutritionGoals)
-  const outputMetrics = buildActivityMetricConfigs(activities)
   const recentEntries = [...entries].slice(-3).reverse()
   const recentActivities = [...activities].slice(-3).reverse()
 
@@ -149,17 +146,25 @@ export default function Dashboard() {
         <h2 className="page-title-mobile" style={pageTitle}>
           Dashboard
         </h2>
-        <p style={{ fontSize: 12, color: '#71717a', margin: '8px 0 0 0' }}>
-          {todayISO()} · Target:{' '}
-          {formatRange(nutritionGoals.calories.low, nutritionGoals.calories.high, 'kcal')} •{' '}
-          {formatRange(nutritionGoals.protein.low, nutritionGoals.protein.high, 'g protein')} • ~
-          {nutritionGoals.carbs.value}g carbs • ~{nutritionGoals.fat.value}g fat • ~
-          {nutritionGoals.fiber.value}g fiber •{' '}
-          {formatCaffeineLimit(nutritionGoals.caffeine.value, 'mg caffeine')}
-        </p>
+        <p style={{ fontSize: 12, color: '#71717a', margin: '8px 0 12px 0' }}>{todayISO()}</p>
+        <div className="dashboard-goal-chips">
+          <span className="dashboard-goal-chip">
+            {formatRange(nutritionGoals.calories.low, nutritionGoals.calories.high, 'kcal')}
+          </span>
+          <span className="dashboard-goal-chip">
+            {formatRange(nutritionGoals.protein.low, nutritionGoals.protein.high, 'g protein')}
+          </span>
+          <span className="dashboard-goal-chip">~{nutritionGoals.carbs.value}g carbs</span>
+          <span className="dashboard-goal-chip">
+            {formatCaffeineLimit(nutritionGoals.caffeine.value, 'mg caffeine')}
+          </span>
+        </div>
       </div>
 
-      <NetBalanceCard balance={balance} hasActivities={activities.length > 0} />
+      <div className="dashboard-bento-hero" style={{ marginBottom: 24 }}>
+        <EnergyOverviewPanel balance={balance} hasActivities={activities.length > 0} />
+        <MacroSplitPanel totals={foodTotals} />
+      </div>
 
       <section style={{ marginBottom: 40 }}>
         <SectionHeader
@@ -168,11 +173,7 @@ export default function Dashboard() {
           href={routeHref('inputs')}
           linkLabel="View Inputs"
         />
-        <div className="metric-grid-2">
-          {inputMetrics.map((m) => (
-            <MetricCard key={m.label} config={m} />
-          ))}
-        </div>
+        <NutritionRingsPanel entries={entries} goals={nutritionGoals} />
       </section>
 
       <section style={{ marginBottom: 40 }}>
@@ -182,34 +183,7 @@ export default function Dashboard() {
           href={routeHref('outputs')}
           linkLabel="View Outputs"
         />
-        {activities.length === 0 ? (
-          <div
-            style={{
-              background: 'white',
-              border: '1px solid #e4e4e7',
-              borderRadius: 24,
-              padding: 24,
-              textAlign: 'center',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            }}
-          >
-            <p style={{ fontWeight: 500, color: '#52525b', margin: '0 0 4px 0' }}>
-              No activities logged today
-            </p>
-            <p style={{ fontSize: 13, color: '#a1a1aa', margin: 0 }}>
-              <a href={routeHref('outputs')} style={{ color: '#134e4b', fontWeight: 500 }}>
-                Log an activity
-              </a>{' '}
-              to track workouts and calories burned.
-            </p>
-          </div>
-        ) : (
-          <div className="metric-grid-2">
-            {outputMetrics.map((metric) => (
-              <ActivityMetricCard key={metric.label} config={metric} />
-            ))}
-          </div>
-        )}
+        <ActivityOverviewPanel activities={activities} goals={nutritionGoals} />
       </section>
 
       <section style={{ marginBottom: 32 }}>
