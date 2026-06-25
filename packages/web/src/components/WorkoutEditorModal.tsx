@@ -1,14 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  DEFAULT_WORKOUT_ICON,
-  DEFAULT_WORKOUT_ICON_BG,
-  DEFAULT_WORKOUT_ICON_COLOR,
-
+  workoutIconOptions,
+  type IconOption,
   type NewWorkoutExercise,
   type WorkoutInput,
   type WorkoutWithExercises,
 } from '@nutrition-tracker/shared'
-import { inputBase, labelBase } from '../lib/styles'
+import CatalogListSection from './catalog/CatalogListSection'
+import CatalogModalHeader from './catalog/CatalogModalHeader'
+import IconPicker from './catalog/IconPicker'
+import {
+  catalogItemCard,
+  inputBase,
+  labelBase,
+  modalFooterButton,
+  modalPrimaryButton,
+  summaryPanel,
+} from '../lib/styles'
 import Modal from './Modal'
 
 interface WorkoutEditorModalProps {
@@ -25,6 +33,17 @@ interface ExerciseForm {
 const EMPTY_EXERCISE: ExerciseForm = {
   name: '',
   targetReps: '10',
+}
+
+function iconFromWorkout(workout: WorkoutWithExercises): IconOption {
+  return (
+    workoutIconOptions.find((opt) => opt.icon === workout.icon) ?? {
+      icon: workout.icon,
+      label: 'Custom',
+      bg: workout.iconBg,
+      color: workout.iconColor,
+    }
+  )
 }
 
 function exerciseFormFromWorkout(workout: WorkoutWithExercises): ExerciseForm[] {
@@ -57,6 +76,9 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
   )
   const [exercises, setExercises] = useState<ExerciseForm[]>(() =>
     workout ? exerciseFormFromWorkout(workout) : [{ ...EMPTY_EXERCISE }],
+  )
+  const [selectedIcon, setSelectedIcon] = useState<IconOption>(() =>
+    workout ? iconFromWorkout(workout) : workoutIconOptions[0],
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -114,9 +136,9 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
       await onSave({
         name,
         description,
-        icon: workout?.icon ?? DEFAULT_WORKOUT_ICON,
-        iconBg: workout?.iconBg ?? DEFAULT_WORKOUT_ICON_BG,
-        iconColor: workout?.iconColor ?? DEFAULT_WORKOUT_ICON_COLOR,
+        icon: selectedIcon.icon,
+        iconBg: selectedIcon.bg,
+        iconColor: selectedIcon.color,
         defaultDurationMinutes: durationValue,
         defaultCalories: caloriesValue,
         exercises: parsedExercises,
@@ -130,21 +152,15 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
   }
 
   return (
-    <Modal titleId="workout-editor-title" onClose={onClose}>
-      <h3
-        id="workout-editor-title"
-        style={{
-          fontFamily: "'Space Grotesk','Inter',sans-serif",
-          fontSize: 22,
-          fontWeight: 600,
-          margin: '0 0 4px 0',
-        }}
-      >
-        {isEdit ? 'Edit Workout' : 'New Workout'}
-      </h3>
-      <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
-        Build a reusable strength routine. Target sets pre-fill when you log the workout.
-      </p>
+    <Modal titleId="workout-editor-title" onClose={onClose} size="wide">
+      <CatalogModalHeader
+        titleId="workout-editor-title"
+        icon={selectedIcon.icon}
+        iconBg={selectedIcon.bg}
+        iconColor={selectedIcon.color}
+        title={isEdit ? 'Edit Workout' : 'New Workout'}
+        subtitle="Build a reusable strength routine. Target sets pre-fill when you log the workout."
+      />
 
       {error && (
         <div
@@ -161,6 +177,14 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
           {error}
         </div>
       )}
+
+      <IconPicker
+        id="workout-icon"
+        label="Icon"
+        options={workoutIconOptions}
+        selected={selectedIcon}
+        onSelect={setSelectedIcon}
+      />
 
       <div style={{ marginBottom: 16 }}>
         <label htmlFor="workout-name" style={labelBase}>
@@ -222,35 +246,27 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
         </div>
       </div>
 
-      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#3f3f46', margin: 0 }}>Exercises</p>
-        <button
-          type="button"
-          onClick={addExerciseRow}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: '#134e4b',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          + Add exercise
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-        {exercises.map((row, index) => (
-          <div
-            key={index}
+      <CatalogListSection
+        title="Exercises"
+        action={
+          <button
+            type="button"
+            onClick={addExerciseRow}
             style={{
-              padding: 16,
-              borderRadius: 16,
-              border: '1px solid #f4f4f5',
-              background: '#fafafa',
+              border: 'none',
+              background: 'transparent',
+              color: '#134e4b',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
             }}
           >
+            + Add exercise
+          </button>
+        }
+      >
+        {exercises.map((row, index) => (
+          <div key={index} style={catalogItemCard}>
             <div className="modal-form-grid">
               <div>
                 <label style={labelBase}>Exercise</label>
@@ -291,36 +307,17 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
             )}
           </div>
         ))}
-      </div>
+      </CatalogListSection>
 
-      <div
-        style={{
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 16,
-          background: '#ecfdf5',
-          color: '#065f46',
-          fontSize: 13,
-        }}
-      >
+      <div style={{ ...summaryPanel, marginBottom: 24 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Workout preview</div>
         {previewExercises.length} {previewExercises.length === 1 ? 'exercise' : 'exercises'}
+        {defaultDurationMinutes.trim() !== '' && ` · ${defaultDurationMinutes} min/set`}
+        {defaultCalories.trim() !== '' && ` · ${defaultCalories} kcal/set`}
       </div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            padding: '10px 20px',
-            borderRadius: 9999,
-            border: '1px solid #e4e4e7',
-            background: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            color: '#52525b',
-          }}
-        >
+        <button type="button" onClick={onClose} style={modalFooterButton}>
           Cancel
         </button>
         <button
@@ -328,14 +325,8 @@ export default function WorkoutEditorModal({ workout, onSave, onClose }: Workout
           onClick={submit}
           disabled={saving}
           style={{
-            padding: '10px 20px',
-            borderRadius: 9999,
-            border: 'none',
+            ...modalPrimaryButton,
             background: saving ? '#6b7280' : '#134e4b',
-            color: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
           }}
         >
           {saving ? 'Saving...' : isEdit ? 'Save Workout' : 'Create Workout'}

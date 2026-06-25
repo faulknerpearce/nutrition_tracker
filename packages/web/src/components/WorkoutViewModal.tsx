@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { WorkoutWithExercises } from '@nutrition-tracker/shared'
 import { fetchWorkout } from '../lib/workouts'
-import { iconTileMd, labelBase } from '../lib/styles'
+import { catalogItemCard, modalFooterButton, modalPrimaryButton } from '../lib/styles'
+import CatalogListSection from './catalog/CatalogListSection'
+import CatalogModalHeader from './catalog/CatalogModalHeader'
 import Modal from './Modal'
 
 interface WorkoutViewModalProps {
@@ -12,7 +14,23 @@ interface WorkoutViewModalProps {
   savedCopyId?: string | null
   savingCopy?: boolean
   onShare?: (workout: WorkoutWithExercises) => void
+  onEdit?: (workout: WorkoutWithExercises) => void
   onSaveCopy?: () => void
+}
+
+const repBadgeStyle = {
+  flex: '0 0 96px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '8px 14px',
+  borderRadius: 12,
+  background: '#ecfdf5',
+  border: '1px solid #a7f3d0',
+  fontSize: 13,
+  fontWeight: 500,
+  color: '#065f46',
+  whiteSpace: 'nowrap' as const,
 }
 
 export default function WorkoutViewModal({
@@ -23,6 +41,7 @@ export default function WorkoutViewModal({
   savedCopyId,
   savingCopy = false,
   onShare,
+  onEdit,
   onSaveCopy,
 }: WorkoutViewModalProps) {
   const [workout, setWorkout] = useState<WorkoutWithExercises | null>(null)
@@ -71,48 +90,33 @@ export default function WorkoutViewModal({
         </div>
       ) : workout ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-            <div style={{ ...iconTileMd, background: workout.iconBg }}>
-              <i
-                className={`fa-solid ${workout.icon}`}
-                style={{ color: workout.iconColor, fontSize: 20 }}
-              />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <h3
-                id="workout-view-title"
-                style={{
-                  fontFamily: "'Space Grotesk','Inter',sans-serif",
-                  fontSize: 22,
-                  fontWeight: 600,
-                  margin: '0 0 4px 0',
-                }}
-              >
-                {workout.name}
-              </h3>
-              <p style={{ fontSize: 12, color: '#71717a', margin: 0 }}>
+          <CatalogModalHeader
+            titleId="workout-view-title"
+            icon={workout.icon}
+            iconBg={workout.iconBg}
+            iconColor={workout.iconColor}
+            title={workout.name}
+            subtitle={
+              <>
                 {mode === 'shared' && ownerDisplayName ? `Shared by ${ownerDisplayName} · ` : ''}
                 {workout.exercises.length} exercises
                 {workout.defaultDurationMinutes !== null && ` · ${workout.defaultDurationMinutes} min/set`}
                 {workout.defaultCalories !== null && ` · ${workout.defaultCalories} kcal/set`}
-              </p>
-            </div>
-          </div>
+              </>
+            }
+            description={workout.description || undefined}
+          />
 
-          {workout.description && (
-            <p style={{ fontSize: 13, color: '#52525b', margin: '0 0 20px 0' }}>{workout.description}</p>
-          )}
-
-          <p style={{ ...labelBase, marginBottom: 10 }}>Exercises</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          <CatalogListSection title="Exercises">
             {workout.exercises.map((exercise) => (
               <div
                 key={exercise.id}
                 style={{
+                  ...catalogItemCard,
                   display: 'flex',
                   alignItems: 'stretch',
                   gap: 8,
-                  width: '100%',
+                  padding: '10px 12px',
                 }}
               >
                 <span
@@ -121,10 +125,6 @@ export default function WorkoutViewModal({
                     display: 'flex',
                     alignItems: 'center',
                     minWidth: 0,
-                    padding: '8px 14px',
-                    borderRadius: 12,
-                    background: '#fafafa',
-                    border: '1px solid #e4e4e7',
                     fontSize: 13,
                     fontWeight: 500,
                     color: '#18181b',
@@ -132,45 +132,26 @@ export default function WorkoutViewModal({
                 >
                   {exercise.name}
                 </span>
-                <span
-                  style={{
-                    flex: '0 0 96px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px 14px',
-                    borderRadius: 12,
-                    background: '#ecfdf5',
-                    border: '1px solid #a7f3d0',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: '#065f46',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
+                <span style={repBadgeStyle}>
                   {exercise.targetReps} {exercise.targetReps === 1 ? 'rep' : 'reps'}
                 </span>
               </div>
             ))}
-          </div>
+          </CatalogListSection>
         </>
       ) : null}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+        {mode === 'owned' && workout && onEdit && (
+          <button type="button" onClick={() => onEdit(workout)} style={modalFooterButton}>
+            Edit
+          </button>
+        )}
         {mode === 'owned' && workout && onShare && (
           <button
             type="button"
             onClick={() => onShare(workout)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 9999,
-              border: '1px solid #e4e4e7',
-              background: 'white',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-              color: '#134e4b',
-            }}
+            style={{ ...modalFooterButton, color: '#134e4b' }}
           >
             Share
           </button>
@@ -181,12 +162,8 @@ export default function WorkoutViewModal({
             onClick={onSaveCopy}
             disabled={!!savedCopyId || savingCopy}
             style={{
-              padding: '10px 20px',
-              borderRadius: 9999,
-              border: 'none',
-              background: savedCopyId ? '#e4e4e7' : '#134e4b',
-              fontSize: 13,
-              fontWeight: 500,
+              ...modalPrimaryButton,
+              background: savedCopyId ? '#e4e4e7' : savingCopy ? '#6b7280' : '#134e4b',
               cursor: savedCopyId ? 'default' : 'pointer',
               color: savedCopyId ? '#71717a' : 'white',
             }}
@@ -194,20 +171,7 @@ export default function WorkoutViewModal({
             {savedCopyId ? 'Already saved' : savingCopy ? 'Saving...' : 'Save to my library'}
           </button>
         )}
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            padding: '10px 20px',
-            borderRadius: 9999,
-            border: '1px solid #e4e4e7',
-            background: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            color: '#52525b',
-          }}
-        >
+        <button type="button" onClick={onClose} style={modalFooterButton}>
           Close
         </button>
       </div>

@@ -15,7 +15,6 @@ import {
 } from '../lib/recipeFilters'
 import {
   deleteRecipe,
-  fetchRecipe,
   fetchRecipeSummaries,
   forkRecipe,
   logRecipe,
@@ -81,14 +80,6 @@ export default function RecipesPage({ onOpenCreateReady }: RecipesPageProps) {
   useEffect(() => {
     onOpenCreateReady?.(openCreate)
   }, [onOpenCreateReady, openCreate])
-
-  const openEdit = async (id: string) => {
-    try {
-      setEditingRecipe(await fetchRecipe(id))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load recipe')
-    }
-  }
 
   const handleLogRecipe = async (servings: number) => {
     if (!loggingRecipe) return
@@ -325,7 +316,6 @@ export default function RecipesPage({ onOpenCreateReady }: RecipesPageProps) {
                   <ZoneButton onClick={() => setSharingRecipe({ id: recipe.id, name: recipe.name })}>
                     Share
                   </ZoneButton>
-                  <ZoneButton onClick={() => openEdit(recipe.id)}>Edit</ZoneButton>
                   <ZoneButton
                     variant="danger"
                     onClick={() => handleDelete(recipe.id)}
@@ -397,6 +387,10 @@ export default function RecipesPage({ onOpenCreateReady }: RecipesPageProps) {
         <RecipeViewModal
           recipeId={viewingRecipeId}
           onClose={() => setViewingRecipeId(null)}
+          onEdit={(recipe) => {
+            setViewingRecipeId(null)
+            setEditingRecipe(recipe)
+          }}
           onShare={(recipe) => setSharingRecipe({ id: recipe.id, name: recipe.name })}
         />
       )}

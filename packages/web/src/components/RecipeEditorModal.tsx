@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  iconOptions,
+  foodIconOptions,
   perServingTotals,
   sumRecipeIngredients,
   type IconOption,
@@ -8,7 +8,17 @@ import {
   type RecipeInput,
   type RecipeWithIngredients,
 } from '@nutrition-tracker/shared'
-import { inputBase, labelBase } from '../lib/styles'
+import CatalogListSection from './catalog/CatalogListSection'
+import CatalogModalHeader from './catalog/CatalogModalHeader'
+import IconPicker from './catalog/IconPicker'
+import {
+  catalogItemCard,
+  inputBase,
+  labelBase,
+  modalFooterButton,
+  modalPrimaryButton,
+  summaryPanel,
+} from '../lib/styles'
 import Modal from './Modal'
 
 interface RecipeEditorModalProps {
@@ -41,7 +51,7 @@ const EMPTY_INGREDIENT: IngredientForm = {
 
 function iconFromRecipe(recipe: RecipeWithIngredients): IconOption {
   return (
-    iconOptions.find((opt) => opt.icon === recipe.icon) ?? {
+    foodIconOptions.find((opt) => opt.icon === recipe.icon) ?? {
       icon: recipe.icon,
       label: 'Custom',
       bg: recipe.iconBg,
@@ -92,7 +102,7 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
     recipe ? ingredientFormFromRecipe(recipe) : [{ ...EMPTY_INGREDIENT }],
   )
   const [selectedIcon, setSelectedIcon] = useState<IconOption>(() =>
-    recipe ? iconFromRecipe(recipe) : iconOptions[0],
+    recipe ? iconFromRecipe(recipe) : foodIconOptions[0],
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -156,22 +166,15 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
   }
 
   return (
-    <Modal titleId="recipe-editor-title" onClose={onClose}>
-      <h3
-        id="recipe-editor-title"
-        style={{
-          fontFamily: "'Space Grotesk','Inter',sans-serif",
-          fontSize: 22,
-          fontWeight: 600,
-          margin: '0 0 4px 0',
-        }}
-      >
-        {isEdit ? 'Edit Recipe' : 'New Recipe'}
-      </h3>
-      <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
-        Build a reusable meal template. Ingredient macros sum to the full batch; servings split
-        that batch when logging.
-      </p>
+    <Modal titleId="recipe-editor-title" onClose={onClose} size="wide">
+      <CatalogModalHeader
+        titleId="recipe-editor-title"
+        icon={selectedIcon.icon}
+        iconBg={selectedIcon.bg}
+        iconColor={selectedIcon.color}
+        title={isEdit ? 'Edit Recipe' : 'New Recipe'}
+        subtitle="Build a reusable meal template. Ingredient macros sum to the full batch; servings split that batch when logging."
+      />
 
       {error && (
         <div
@@ -189,33 +192,13 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
         </div>
       )}
 
-      <div style={{ marginBottom: 20 }}>
-        <label htmlFor="recipe-icon" style={labelBase}>
-          Icon
-        </label>
-        <div id="recipe-icon" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {iconOptions.map((opt) => (
-            <button
-              key={opt.icon}
-              type="button"
-              aria-label={opt.label}
-              aria-pressed={selectedIcon.icon === opt.icon}
-              onClick={() => setSelectedIcon(opt)}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                border:
-                  selectedIcon.icon === opt.icon ? '2px solid #134e4b' : '2px solid transparent',
-                background: opt.bg,
-                cursor: 'pointer',
-              }}
-            >
-              <i className={`fa-solid ${opt.icon}`} style={{ color: opt.color, fontSize: 18 }} />
-            </button>
-          ))}
-        </div>
-      </div>
+      <IconPicker
+        id="recipe-icon"
+        label="Icon"
+        options={foodIconOptions}
+        selected={selectedIcon}
+        onSelect={setSelectedIcon}
+      />
 
       <div style={{ marginBottom: 16 }}>
         <label htmlFor="recipe-name" style={labelBase}>
@@ -259,35 +242,27 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
         />
       </div>
 
-      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#3f3f46', margin: 0 }}>Ingredients</p>
-        <button
-          type="button"
-          onClick={addIngredientRow}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: '#134e4b',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          + Add ingredient
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-        {ingredients.map((row, index) => (
-          <div
-            key={index}
+      <CatalogListSection
+        title="Ingredients"
+        action={
+          <button
+            type="button"
+            onClick={addIngredientRow}
             style={{
-              padding: 16,
-              borderRadius: 16,
-              border: '1px solid #f4f4f5',
-              background: '#fafafa',
+              border: 'none',
+              background: 'transparent',
+              color: '#134e4b',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
             }}
           >
+            + Add ingredient
+          </button>
+        }
+      >
+        {ingredients.map((row, index) => (
+          <div key={index} style={catalogItemCard}>
             <div className="modal-form-grid" style={{ marginBottom: 12 }}>
               <div>
                 <label style={labelBase}>Name</label>
@@ -342,37 +317,16 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
             )}
           </div>
         ))}
-      </div>
+      </CatalogListSection>
 
-      <div
-        style={{
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 16,
-          background: '#ecfdf5',
-          color: '#065f46',
-          fontSize: 13,
-        }}
-      >
-        Batch: {batchTotals.calories} kcal · {batchTotals.protein}g protein · Per serving (
-        {servings}): {servingTotals.calories} kcal · {servingTotals.protein}g protein
+      <div style={{ ...summaryPanel, marginBottom: 24 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Nutrition preview</div>
+        Batch: {batchTotals.calories} kcal · {batchTotals.protein}g protein · Per serving ({servings}
+        ): {servingTotals.calories} kcal · {servingTotals.protein}g protein
       </div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            padding: '10px 20px',
-            borderRadius: 9999,
-            border: '1px solid #e4e4e7',
-            background: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            color: '#52525b',
-          }}
-        >
+        <button type="button" onClick={onClose} style={modalFooterButton}>
           Cancel
         </button>
         <button
@@ -380,14 +334,8 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
           onClick={submit}
           disabled={saving}
           style={{
-            padding: '10px 20px',
-            borderRadius: 9999,
-            border: 'none',
+            ...modalPrimaryButton,
             background: saving ? '#6b7280' : '#134e4b',
-            color: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
           }}
         >
           {saving ? 'Saving...' : isEdit ? 'Save Recipe' : 'Create Recipe'}

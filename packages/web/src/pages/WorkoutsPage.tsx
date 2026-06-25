@@ -16,7 +16,6 @@ import {
 import { fetchWorkoutsSharedWithMe, type SharedWorkoutItem } from '../lib/sharing'
 import {
   deleteWorkout,
-  fetchWorkout,
   fetchWorkoutSummaries,
   forkWorkout,
   logWorkout,
@@ -81,14 +80,6 @@ export default function WorkoutsPage({ onOpenCreateReady }: WorkoutsPageProps) {
   useEffect(() => {
     onOpenCreateReady?.(openCreate)
   }, [onOpenCreateReady, openCreate])
-
-  const openEdit = async (id: string) => {
-    try {
-      setEditingWorkout(await fetchWorkout(id))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load workout')
-    }
-  }
 
   const handleLogWorkout = async (options: {
     setsLogged: number
@@ -346,7 +337,6 @@ export default function WorkoutsPage({ onOpenCreateReady }: WorkoutsPageProps) {
                   >
                     Share
                   </ZoneButton>
-                  <ZoneButton onClick={() => openEdit(workout.id)}>Edit</ZoneButton>
                   <ZoneButton
                     variant="danger"
                     onClick={() => handleDelete(workout.id)}
@@ -418,6 +408,10 @@ export default function WorkoutsPage({ onOpenCreateReady }: WorkoutsPageProps) {
         <WorkoutViewModal
           workoutId={viewingWorkoutId}
           onClose={() => setViewingWorkoutId(null)}
+          onEdit={(workout) => {
+            setViewingWorkoutId(null)
+            setEditingWorkout(workout)
+          }}
           onShare={(workout) => setSharingWorkout({ id: workout.id, name: workout.name })}
         />
       )}

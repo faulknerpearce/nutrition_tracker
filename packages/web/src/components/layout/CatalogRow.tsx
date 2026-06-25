@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useZoneTheme } from '../../context/useZoneTheme'
 
 interface CatalogRowProps {
   icon: string
@@ -20,8 +19,6 @@ export default function CatalogRow({
   actions,
   onView,
 }: CatalogRowProps) {
-  const zone = useZoneTheme()
-
   return (
     <div className="catalog-row">
       <button
@@ -38,13 +35,6 @@ export default function CatalogRow({
           <div className="catalog-row-title">{title}</div>
           <div className="catalog-row-subtitle">{subtitle}</div>
         </div>
-        {onView && (
-          <i
-            className="fa-solid fa-chevron-right catalog-row-chevron"
-            style={{ color: zone.eyebrow }}
-            aria-hidden="true"
-          />
-        )}
       </button>
       <div className="catalog-row-actions">{actions}</div>
     </div>

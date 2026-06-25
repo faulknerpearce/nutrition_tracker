@@ -97,3 +97,54 @@ export const labelBase: CSSProperties = {
   display: 'block',
   marginBottom: 6,
 }
+
+export const modalTitle: CSSProperties = {
+  fontFamily: "'Space Grotesk','Inter',system-ui,sans-serif",
+  fontSize: 22,
+  fontWeight: 600,
+  margin: 0,
+  letterSpacing: '-0.02em',
+}
+
+export const modalSubtitle: CSSProperties = {
+  fontSize: 12,
+  color: '#71717a',
+  margin: '4px 0 0 0',
+}
+
+export const catalogItemCard: CSSProperties = {
+  padding: '14px 16px',
+  borderRadius: 16,
+  border: '1px solid #e4e4e7',
+  background: '#fafafa',
+}
+
+export const summaryPanel: CSSProperties = {
+  padding: 16,
+  borderRadius: 16,
+  background: '#ecfdf5',
+  color: '#065f46',
+  fontSize: 13,
+}
+
+export const modalFooterButton: CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 9999,
+  border: '1px solid #e4e4e7',
+  background: 'white',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  color: '#52525b',
+}
+
+export const modalPrimaryButton: CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 9999,
+  border: 'none',
+  background: '#134e4b',
+  color: 'white',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+}

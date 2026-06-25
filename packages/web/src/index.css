@@ -161,11 +161,6 @@ body {
   margin-top: 2px;
 }
 
-.catalog-row-chevron {
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
 .catalog-row-actions {
   display: flex;
   align-items: center;
@@ -431,6 +426,33 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.icon-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.icon-picker-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s ease;
+}
+
+.icon-picker-option:hover {
+  border-color: #d4d4d8;
+}
+
+.icon-picker-option[aria-selected='true'] {
+  border-color: #134e4b;
 }
 
 .log-entry-card {

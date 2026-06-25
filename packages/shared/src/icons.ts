@@ -9,54 +9,49 @@ export const DEFAULT_ICON = 'fa-utensils'
 export const DEFAULT_ICON_BG = '#f4f4f5'
 export const DEFAULT_ICON_COLOR = '#71717a'
 
-// Icon set used by the Add/Edit Food Entry modal. All classes must exist in
-// Font Awesome Free 6.5.1 (loaded via index.html). Entries are grouped loosely
-// by category for readability — order does not affect rendering.
-export const iconOptions: readonly IconOption[] = [
-  // Default / generic
-  { icon: 'fa-utensils', label: 'Meal', bg: '#f4f4f5', color: '#71717a' },
-  { icon: 'fa-bowl-food', label: 'Bowl', bg: '#f4f4f5', color: '#52525b' },
-
-  // Hot drinks
-  { icon: 'fa-coffee', label: 'Coffee', bg: '#fef3c7', color: '#d97706' },
-  { icon: 'fa-mug-hot', label: 'Hot drink', bg: '#fee2e2', color: '#e11d48' },
-  { icon: 'fa-mug-saucer', label: 'Tea', bg: '#ecfeff', color: '#0e7490' },
+/** Icons for food entries and recipes — aligned with nutrition tracking. */
+export const foodIconOptions: readonly IconOption[] = [
+  { icon: 'fa-utensils', label: 'Meal', bg: '#f4f4f5', color: '#52525b' },
+  { icon: 'fa-bowl-food', label: 'Bowl', bg: '#f4f4f5', color: '#71717a' },
+  { icon: 'fa-plate-wheat', label: 'Plate', bg: '#fef3c7', color: '#d97706' },
+  { icon: 'fa-fire', label: 'Calories', bg: '#fed7aa', color: '#ea580c' },
+  { icon: 'fa-dumbbell', label: 'Protein', bg: '#d1fae5', color: '#059669' },
+  { icon: 'fa-wheat-awn', label: 'Carbs', bg: '#fef3c7', color: '#d97706' },
+  { icon: 'fa-bacon', label: 'Fat', bg: '#fce7f3', color: '#db2777' },
+  { icon: 'fa-seedling', label: 'Fiber', bg: '#ecfccb', color: '#65a30d' },
+  { icon: 'fa-mug-hot', label: 'Caffeine', bg: '#ede9fe', color: '#7c3aed' },
   { icon: 'fa-glass-water', label: 'Water', bg: '#e0f2fe', color: '#0284c7' },
-
-  // Cold drinks
-  { icon: 'fa-martini-glass-citrus', label: 'Cocktail', bg: '#fef9c3', color: '#a16207' },
-  { icon: 'fa-blender', label: 'Shake', bg: '#e0f2fe', color: '#0284c7' },
-
-  // Fruits & vegetables
-  { icon: 'fa-apple-alt', label: 'Fruit', bg: '#fef9c3', color: '#ca8a04' },
-  { icon: 'fa-lemon', label: 'Lemon', bg: '#fef9c3', color: '#ca8a04' },
-  { icon: 'fa-carrot', label: 'Carrot', bg: '#ffedd5', color: '#ea580c' },
-  { icon: 'fa-pepper-hot', label: 'Pepper', bg: '#fee2e2', color: '#dc2626' },
-  { icon: 'fa-mushroom', label: 'Mushroom', bg: '#f5f5f4', color: '#78716c' },
-  { icon: 'fa-leaf', label: 'Plant', bg: '#dcfce7', color: '#16a34a' },
-
-  // Proteins
-  { icon: 'fa-drumstick-bite', label: 'Meat', bg: '#fee2e2', color: '#dc2626' },
-  { icon: 'fa-bacon', label: 'Bacon', bg: '#fee2e2', color: '#b91c1c' },
-  { icon: 'fa-fish', label: 'Fish', bg: '#dbeafe', color: '#2563eb' },
+  { icon: 'fa-blender', label: 'Smoothie', bg: '#ecfeff', color: '#0d9488' },
+  { icon: 'fa-apple-whole', label: 'Fruit', bg: '#fef9c3', color: '#ca8a04' },
+  { icon: 'fa-carrot', label: 'Vegetables', bg: '#ffedd5', color: '#ea580c' },
   { icon: 'fa-egg', label: 'Eggs', bg: '#fef9c3', color: '#ca8a04' },
-  { icon: 'fa-cheese', label: 'Cheese', bg: '#fef3c7', color: '#d97706' },
-
-  // Grains & bakery
-  { icon: 'fa-bread-slice', label: 'Bread', bg: '#fef3c7', color: '#d97706' },
-  { icon: 'fa-croissant', label: 'Croissant', bg: '#fef3c7', color: '#b45309' },
-  { icon: 'fa-bowl-rice', label: 'Rice', bg: '#f5f5f4', color: '#78716c' },
-  { icon: 'fa-burger', label: 'Burger', bg: '#fef3c7', color: '#92400e' },
-  { icon: 'fa-pizza-slice', label: 'Pizza', bg: '#fee2e2', color: '#dc2626' },
-  { icon: 'fa-hotdog', label: 'Hot dog', bg: '#fef3c7', color: '#b45309' },
-  { icon: 'fa-taco', label: 'Taco', bg: '#fef3c7', color: '#b45309' },
-
-  // Snacks & sweets
-  { icon: 'fa-cookie', label: 'Cookie', bg: '#f5d0a9', color: '#92400e' },
-  { icon: 'fa-cookie-bite', label: 'Snack', bg: '#f5d0a9', color: '#92400e' },
-  { icon: 'fa-ice-cream', label: 'Ice cream', bg: '#fce7f3', color: '#be185d' },
-  { icon: 'fa-popcorn', label: 'Popcorn', bg: '#fef9c3', color: '#a16207' },
-
-  // Energy / supplements
-  { icon: 'fa-bolt', label: 'Energy', bg: '#fef9c3', color: '#ca8a04' },
+  { icon: 'fa-fish', label: 'Fish', bg: '#dbeafe', color: '#2563eb' },
+  { icon: 'fa-drumstick-bite', label: 'Poultry', bg: '#fee2e2', color: '#dc2626' },
+  { icon: 'fa-cheese', label: 'Dairy', bg: '#fef3c7', color: '#d97706' },
+  { icon: 'fa-bread-slice', label: 'Bread', bg: '#fef3c7', color: '#b45309' },
+  { icon: 'fa-bowl-rice', label: 'Grains', bg: '#f5f5f4', color: '#78716c' },
+  { icon: 'fa-chart-pie', label: 'Macros', bg: '#ccfbf1', color: '#134e4b' },
 ]
+
+/** @deprecated Alias for foodIconOptions */
+export const iconOptions = foodIconOptions
+
+/** Icons for workout templates — aligned with activity outputs. */
+export const workoutIconOptions: readonly IconOption[] = [
+  { icon: 'fa-dumbbell', label: 'Strength', bg: '#ecfdf5', color: '#134e4b' },
+  { icon: 'fa-heart-pulse', label: 'Cardio', bg: '#fee2e2', color: '#dc2626' },
+  { icon: 'fa-person-running', label: 'Run', bg: '#dbeafe', color: '#2563eb' },
+  { icon: 'fa-person-biking', label: 'Cycle', bg: '#e0f2fe', color: '#0284c7' },
+  { icon: 'fa-person-swimming', label: 'Swim', bg: '#ecfeff', color: '#0d9488' },
+  { icon: 'fa-person-walking', label: 'Walk', bg: '#f4f4f5', color: '#52525b' },
+  { icon: 'fa-weight-hanging', label: 'Weights', bg: '#fef3c7', color: '#d97706' },
+  { icon: 'fa-fire', label: 'Burn', bg: '#fed7aa', color: '#ea580c' },
+  { icon: 'fa-bolt', label: 'HIIT', bg: '#fef9c3', color: '#ca8a04' },
+  { icon: 'fa-stopwatch', label: 'Timed', bg: '#ede9fe', color: '#7c3aed' },
+  { icon: 'fa-shoe-prints', label: 'Steps', bg: '#f5f5f4', color: '#78716c' },
+  { icon: 'fa-mountain', label: 'Hike', bg: '#dcfce7', color: '#16a34a' },
+  { icon: 'fa-spa', label: 'Mobility', bg: '#ecfccb', color: '#65a30d' },
+  { icon: 'fa-clock', label: 'Duration', bg: '#ccfbf1', color: '#134e4b' },
+]
+
+export const DEFAULT_WORKOUT_ICON_OPTION = workoutIconOptions[0]
