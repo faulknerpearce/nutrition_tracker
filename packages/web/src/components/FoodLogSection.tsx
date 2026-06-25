@@ -6,7 +6,10 @@ import BarcodeScannerModal from './BarcodeScannerModal'
 
 interface FoodLogSectionProps {
   entries: FoodEntry[]
-  onAdd?: (entry: NewFoodEntry, options?: { saveAsRecipe?: boolean }) => Promise<void>
+  onAdd?: (
+    entry: NewFoodEntry,
+    options?: { saveAsRecipe?: boolean; perServing?: NewFoodEntry },
+  ) => Promise<void>
   onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
   onEdit?: (id: string, entry: NewFoodEntry) => Promise<void>
   onDelete?: (id: string) => Promise<void>

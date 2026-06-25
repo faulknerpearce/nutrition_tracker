@@ -17,7 +17,10 @@ type AddMode = 'manual' | 'recipe'
 interface AddEntryModalProps {
   entry?: FoodEntry
   prefill?: NewFoodEntry
-  onAdd: (entry: NewFoodEntry, options?: { saveAsRecipe?: boolean }) => Promise<void>
+  onAdd: (
+    entry: NewFoodEntry,
+    options?: { saveAsRecipe?: boolean; perServing?: NewFoodEntry },
+  ) => Promise<void>
   onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
   onClose: () => void
 }
@@ -103,18 +106,38 @@ export default function AddEntryModal({
   const [recipes, setRecipes] = useState<RecipeSummary[]>([])
   const [selectedRecipeId, setSelectedRecipeId] = useState('')
   const [recipeServings, setRecipeServings] = useState('1')
+  const [entryServings, setEntryServings] = useState('1')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
+  const recipeServingsNum = Number.parseFloat(recipeServings)
   const previewTotals =
     selectedRecipe && recipeServings !== ''
       ? scaleRecipeToServings(
           selectedRecipe.batchTotals,
           selectedRecipe.defaultServings,
-          Number.parseFloat(recipeServings) || 0,
+          recipeServingsNum || 0,
         )
+      : null
+  const entryServingsNum = Number.parseFloat(entryServings)
+  const perServingPreview =
+    !isEdit && entryServings !== '' && Number.isFinite(entryServingsNum) && entryServingsNum > 0
+      ? {
+          calories: form.calories === '' ? NaN : Number.parseInt(form.calories, 10),
+          protein: form.protein === '' ? NaN : Number.parseInt(form.protein, 10),
+          carbs: form.carbs === '' ? 0 : Number.parseInt(form.carbs, 10) || 0,
+          fat: form.fat === '' ? 0 : Number.parseInt(form.fat, 10) || 0,
+          fiber: form.fiber === '' ? 0 : Number.parseInt(form.fiber, 10) || 0,
+          caffeine: form.caffeine === '' ? 0 : Number.parseInt(form.caffeine, 10) || 0,
+        }
+      : null
+  const entryPreviewTotals =
+    perServingPreview &&
+    Number.isFinite(perServingPreview.calories) &&
+    Number.isFinite(perServingPreview.protein)
+      ? scaleRecipeToServings(perServingPreview, 1, entryServingsNum)
       : null
 
   useEffect(() => {
@@ -156,6 +179,7 @@ export default function AddEntryModal({
   const close = () => {
     setForm(entry ? formFromEntry(entry) : EMPTY_FORM)
     setSelectedIcon(entry ? iconFromEntry(entry) : iconOptions[0])
+    setEntryServings('1')
     setError(null)
     onClose()
   }
@@ -178,18 +202,44 @@ export default function AddEntryModal({
       return
     }
 
+    const servings = Number.parseFloat(entryServings)
+    if (!isEdit && (!Number.isFinite(servings) || servings <= 0)) {
+      setError('Servings must be greater than 0')
+      return
+    }
+
+    const perServingEntry: NewFoodEntry = {
+      icon: selectedIcon.icon,
+      iconBg: selectedIcon.bg,
+      iconColor: selectedIcon.color,
+      ...validated.value,
+    }
+    const loggedEntry =
+      isEdit || servings === 1
+        ? perServingEntry
+        : {
+            ...perServingEntry,
+            ...scaleRecipeToServings(
+              {
+                calories: validated.value.calories,
+                protein: validated.value.protein,
+                carbs: validated.value.carbs,
+                fat: validated.value.fat,
+                fiber: validated.value.fiber,
+                caffeine: validated.value.caffeine,
+              },
+              1,
+              servings,
+            ),
+          }
+
     setAdding(true)
     setError(null)
     try {
-      await onAdd(
-        {
-          icon: selectedIcon.icon,
-          iconBg: selectedIcon.bg,
-          iconColor: selectedIcon.color,
-          ...validated.value,
-        },
-        { saveAsRecipe },
-      )
+      await onAdd(loggedEntry, {
+        saveAsRecipe,
+        perServing: saveAsRecipe ? perServingEntry : undefined,
+      })
       close()
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to ${isEdit ? 'update' : 'add'} entry`)
@@ -239,7 +289,7 @@ export default function AddEntryModal({
           {isEdit
             ? 'Update this food item, including its icon and nutrition values.'
             : isScanned
-              ? 'Review the scanned product and adjust serving size or nutrition values before logging.'
+              ? 'Review the scanned product, set how many servings you had, and adjust nutrition values if needed.'
               : "Log a new food item to today's entries."}
         </p>
 
@@ -530,6 +580,42 @@ export default function AddEntryModal({
             />
           </div>
         </div>
+
+        {!isEdit && (
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-servings" style={labelBase}>
+              How many servings did you have?
+            </label>
+            <input
+              id="entry-servings"
+              type="number"
+              min="0.25"
+              step="0.25"
+              value={entryServings}
+              onChange={(e) => setEntryServings(e.target.value)}
+              style={inputBase}
+            />
+            <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+              Nutrition values above are per serving.
+            </p>
+          </div>
+        )}
+
+        {!isEdit && entryPreviewTotals && entryServingsNum !== 1 && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 16,
+              borderRadius: 16,
+              background: '#ecfdf5',
+              color: '#065f46',
+              fontSize: 13,
+            }}
+          >
+            This log will add {entryPreviewTotals.calories} kcal, {entryPreviewTotals.protein}g
+            protein, {entryPreviewTotals.carbs}g carbs.
+          </div>
+        )}
 
         {!isEdit && (
           <label

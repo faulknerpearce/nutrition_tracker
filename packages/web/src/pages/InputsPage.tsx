@@ -43,28 +43,29 @@ export default function InputsPage() {
 
   async function persistAdd(
     input: NewFoodEntry,
-    options?: { saveAsRecipe?: boolean },
+    options?: { saveAsRecipe?: boolean; perServing?: NewFoodEntry },
   ) {
     const entry = await addEntry(input)
     if (options?.saveAsRecipe) {
+      const recipeSource = options.perServing ?? input
       await saveRecipe({
-        name: input.name,
-        description: input.description,
-        icon: input.icon,
-        iconBg: input.iconBg,
-        iconColor: input.iconColor,
+        name: recipeSource.name,
+        description: recipeSource.description,
+        icon: recipeSource.icon,
+        iconBg: recipeSource.iconBg,
+        iconColor: recipeSource.iconColor,
         defaultServings: 1,
         ingredients: [
           {
-            name: input.name,
+            name: recipeSource.name,
             amount: '',
             sortOrder: 0,
-            calories: input.calories,
-            protein: input.protein,
-            carbs: input.carbs,
-            fat: input.fat,
-            fiber: input.fiber,
-            caffeine: input.caffeine,
+            calories: recipeSource.calories,
+            protein: recipeSource.protein,
+            carbs: recipeSource.carbs,
+            fat: recipeSource.fat,
+            fiber: recipeSource.fiber,
+            caffeine: recipeSource.caffeine,
           },
         ],
       })
