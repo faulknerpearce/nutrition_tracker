@@ -16,6 +16,7 @@ type AddMode = 'manual' | 'recipe'
 
 interface AddEntryModalProps {
   entry?: FoodEntry
+  prefill?: NewFoodEntry
   onAdd: (entry: NewFoodEntry, options?: { saveAsRecipe?: boolean }) => Promise<void>
   onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
   onClose: () => void
@@ -67,17 +68,36 @@ function formFromEntry(entry: FoodEntry): FormState {
   }
 }
 
+function formFromNewEntry(entry: NewFoodEntry): FormState {
+  return formFromEntry({ ...entry, id: 'prefill' })
+}
+
+function iconFromNewEntry(entry: NewFoodEntry): IconOption {
+  return (
+    iconOptions.find((opt) => opt.icon === entry.icon) ?? {
+      icon: entry.icon,
+      label: 'Custom',
+      bg: entry.iconBg,
+      color: entry.iconColor,
+    }
+  )
+}
+
 export default function AddEntryModal({
   entry,
+  prefill,
   onAdd,
   onLogRecipe,
   onClose,
 }: AddEntryModalProps) {
   const isEdit = entry !== undefined
+  const isScanned = prefill !== undefined && !isEdit
   const [mode, setMode] = useState<AddMode>('manual')
-  const [form, setForm] = useState<FormState>(() => (entry ? formFromEntry(entry) : EMPTY_FORM))
+  const [form, setForm] = useState<FormState>(() =>
+    entry ? formFromEntry(entry) : prefill ? formFromNewEntry(prefill) : EMPTY_FORM,
+  )
   const [selectedIcon, setSelectedIcon] = useState<IconOption>(() =>
-    entry ? iconFromEntry(entry) : iconOptions[0],
+    entry ? iconFromEntry(entry) : prefill ? iconFromNewEntry(prefill) : iconOptions[0],
   )
   const [saveAsRecipe, setSaveAsRecipe] = useState(false)
   const [recipes, setRecipes] = useState<RecipeSummary[]>([])
@@ -218,7 +238,9 @@ export default function AddEntryModal({
         <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
           {isEdit
             ? 'Update this food item, including its icon and nutrition values.'
-            : "Log a new food item to today's entries."}
+            : isScanned
+              ? 'Review the scanned product and adjust serving size or nutrition values before logging.'
+              : "Log a new food item to today's entries."}
         </p>
 
         {!isEdit && onLogRecipe && (

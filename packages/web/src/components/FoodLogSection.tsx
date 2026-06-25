@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import type { MappedBarcodeProduct } from '../lib/openFoodFacts'
 import type { FoodEntry, NewFoodEntry } from '../lib/entries'
 import AddEntryModal from './AddEntryModal'
+import BarcodeScannerModal from './BarcodeScannerModal'
 
 interface FoodLogSectionProps {
   entries: FoodEntry[]
@@ -27,6 +29,8 @@ export default function FoodLogSection({
 }: FoodLogSectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [prefillEntry, setPrefillEntry] = useState<NewFoodEntry | null>(null)
   const [editingEntry, setEditingEntry] = useState<FoodEntry | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -110,30 +114,55 @@ export default function FoodLogSection({
           />
         </button>
         {!readOnly && onAdd && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddForm(true)
-              setExpanded(true)
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 16px',
-              background: '#134e4b',
-              color: 'white',
-              border: 'none',
-              borderRadius: 9999,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            <i className="fa-solid fa-plus" style={{ fontSize: 11 }}></i>
-            Add Entry
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setPrefillEntry(null)
+                setShowAddForm(true)
+                setExpanded(true)
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 16px',
+                background: '#134e4b',
+                color: 'white',
+                border: 'none',
+                borderRadius: 9999,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              <i className="fa-solid fa-plus" style={{ fontSize: 11 }}></i>
+              Add Entry
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowScanner(true)
+                setExpanded(true)
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 16px',
+                background: 'white',
+                color: '#134e4b',
+                border: '1px solid #134e4b',
+                borderRadius: 9999,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              <i className="fa-solid fa-barcode" style={{ fontSize: 11 }}></i>
+              Scan Barcode
+            </button>
+          </div>
         )}
       </div>
 
@@ -371,11 +400,25 @@ export default function FoodLogSection({
         </div>
       )}
 
+      {showScanner && onAdd && (
+        <BarcodeScannerModal
+          onProductFound={(product: MappedBarcodeProduct) => {
+            setPrefillEntry(product.entry)
+            setShowScanner(false)
+            setShowAddForm(true)
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
       {showAddForm && onAdd && (
         <AddEntryModal
+          prefill={prefillEntry ?? undefined}
           onAdd={onAdd}
           onLogRecipe={onLogRecipe}
-          onClose={() => setShowAddForm(false)}
+          onClose={() => {
+            setShowAddForm(false)
+            setPrefillEntry(null)
+          }}
         />
       )}
       {editingEntry && onEdit && (
