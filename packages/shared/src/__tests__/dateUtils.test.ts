@@ -3,6 +3,7 @@ import {
   formatDayLabel,
   offsetDateISO,
   parseISODate,
+  shiftISODate,
   parseLogDate,
   todayISO,
   todayISOInTimeZone,
@@ -40,6 +41,14 @@ describe('offsetDateISO', () => {
     const ref = new Date(2026, 5, 23)
     expect(offsetDateISO(1, ref)).toBe('2026-06-22')
     expect(offsetDateISO(30, ref)).toBe('2026-05-24')
+  })
+})
+
+describe('shiftISODate', () => {
+  it('shifts an ISO date by the given number of days', () => {
+    expect(shiftISODate('2026-06-23', -1)).toBe('2026-06-22')
+    expect(shiftISODate('2026-06-23', 1)).toBe('2026-06-24')
+    expect(shiftISODate('2026-03-01', -1)).toBe('2026-02-28')
   })
 })
 

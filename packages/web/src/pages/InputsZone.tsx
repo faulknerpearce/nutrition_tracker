@@ -26,7 +26,7 @@ export default function InputsZone({ route }: InputsZoneProps) {
         description={
           isRecipes
             ? 'Saved meal templates for quick logging.'
-            : 'Expand a day to view, add, or edit food entries.'
+            : 'Browse days and log food entries with stats and history.'
         }
         actions={
           isRecipes ? (

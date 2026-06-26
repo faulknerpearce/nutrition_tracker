@@ -26,7 +26,7 @@ export default function OutputsZone({ route }: OutputsZoneProps) {
         description={
           isWorkouts
             ? 'Saved routines for quick activity logging.'
-            : 'Expand a day to view, add, or edit activities.'
+            : 'Browse days and log activities with stats and history.'
         }
         actions={
           isWorkouts ? (

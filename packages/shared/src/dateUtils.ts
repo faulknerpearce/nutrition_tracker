@@ -52,6 +52,13 @@ export function offsetDateISO(days: number, from: Date = new Date()): string {
   return todayISO(date)
 }
 
+/** Shift an ISO date string by `deltaDays` on the local calendar. */
+export function shiftISODate(iso: string, deltaDays: number): string {
+  const date = parseISODate(iso)
+  date.setDate(date.getDate() + deltaDays)
+  return todayISO(date)
+}
+
 function resolveTodayISO(options?: { now?: Date; timeZone?: string }): string {
   if (options?.timeZone) {
     return todayISOInTimeZone(options.timeZone, options.now)
