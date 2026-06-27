@@ -5,12 +5,12 @@
 
 create table if not exists public.activity_shares (
   id                      uuid primary key default gen_random_uuid(),
-  activity_id             uuid not null references public.activities(id) on delete cascade,
+  activity_id             text not null references public.activities(id) on delete cascade,
   owner_id                uuid not null references auth.users(id) on delete cascade,
   shared_with_user_id     uuid not null references auth.users(id) on delete cascade,
   owner_display_name      text not null,
   shared_with_display_name text not null,
-  saved_copy_id           uuid references public.activities(id) on delete set null,
+  saved_copy_id           text references public.activities(id) on delete set null,
   created_at              timestamptz not null default now(),
   unique (activity_id, shared_with_user_id)
 );

@@ -5,12 +5,12 @@
 
 create table if not exists public.food_entry_shares (
   id                      uuid primary key default gen_random_uuid(),
-  food_entry_id           uuid not null references public.food_entries(id) on delete cascade,
+  food_entry_id           text not null references public.food_entries(id) on delete cascade,
   owner_id                uuid not null references auth.users(id) on delete cascade,
   shared_with_user_id     uuid not null references auth.users(id) on delete cascade,
   owner_display_name      text not null,
   shared_with_display_name text not null,
-  saved_copy_id           uuid references public.food_entries(id) on delete set null,
+  saved_copy_id           text references public.food_entries(id) on delete set null,
   created_at              timestamptz not null default now(),
   unique (food_entry_id, shared_with_user_id)
 );
