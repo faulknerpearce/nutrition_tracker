@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  currentTimeInputValue,
+  formatTimeInputValue,
   iconOptions,
+  loggedAtFromDayAndTime,
   scaleRecipeToServings,
   validateEntry,
   type FoodEntry,
+  type FoodEntryWrite,
   type IconOption,
-  type NewFoodEntry,
   type RecipeSummary,
 } from '@nutrition-tracker/shared'
 import { focusIfDesktop } from '../lib/device'
@@ -17,18 +20,25 @@ type AddMode = 'manual' | 'recipe'
 
 interface AddEntryModalProps {
   entry?: FoodEntry
-  prefill?: NewFoodEntry
+  prefill?: FoodEntryWrite
+  logDate: string
+  timeZone: string
   onAdd: (
-    entry: NewFoodEntry,
-    options?: { saveAsRecipe?: boolean; perServing?: NewFoodEntry },
+    entry: FoodEntryWrite,
+    options?: { saveAsRecipe?: boolean; perServing?: FoodEntryWrite },
   ) => Promise<void>
-  onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
+  onLogRecipe?: (
+    recipeId: string,
+    servings: number,
+    options?: { loggedAt?: string },
+  ) => Promise<void>
   onClose: () => void
 }
 
 interface FormState {
   name: string
   description: string
+  logTime: string
   calories: string
   protein: string
   carbs: string
@@ -37,15 +47,23 @@ interface FormState {
   caffeine: string
 }
 
-const EMPTY_FORM: FormState = {
-  name: '',
-  description: '',
-  calories: '',
-  protein: '',
-  carbs: '',
-  fat: '',
-  fiber: '',
-  caffeine: '',
+function initialLogTime(entry: FoodEntry | undefined, timeZone: string): string {
+  if (entry?.loggedAt) return formatTimeInputValue(entry.loggedAt, timeZone)
+  return currentTimeInputValue(timeZone)
+}
+
+function emptyForm(timeZone: string): FormState {
+  return {
+    name: '',
+    description: '',
+    logTime: currentTimeInputValue(timeZone),
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+    caffeine: '',
+  }
 }
 
 function iconFromEntry(entry: FoodEntry): IconOption {
@@ -59,10 +77,11 @@ function iconFromEntry(entry: FoodEntry): IconOption {
   )
 }
 
-function formFromEntry(entry: FoodEntry): FormState {
+function formFromEntry(entry: FoodEntry, timeZone: string): FormState {
   return {
     name: entry.name,
     description: entry.description,
+    logTime: initialLogTime(entry, timeZone),
     calories: String(entry.calories),
     protein: String(entry.protein),
     carbs: String(entry.carbs),
@@ -72,11 +91,16 @@ function formFromEntry(entry: FoodEntry): FormState {
   }
 }
 
-function formFromNewEntry(entry: NewFoodEntry): FormState {
-  return formFromEntry({ ...entry, id: 'prefill', loggedAt: '' })
+function formFromNewEntry(entry: FoodEntryWrite, timeZone: string): FormState {
+  return {
+    ...formFromEntry({ ...entry, id: 'prefill', loggedAt: entry.loggedAt ?? '' }, timeZone),
+    logTime: entry.loggedAt
+      ? formatTimeInputValue(entry.loggedAt, timeZone)
+      : currentTimeInputValue(timeZone),
+  }
 }
 
-function iconFromNewEntry(entry: NewFoodEntry): IconOption {
+function iconFromNewEntry(entry: FoodEntryWrite): IconOption {
   return (
     iconOptions.find((opt) => opt.icon === entry.icon) ?? {
       icon: entry.icon,
@@ -90,6 +114,8 @@ function iconFromNewEntry(entry: NewFoodEntry): IconOption {
 export default function AddEntryModal({
   entry,
   prefill,
+  logDate,
+  timeZone,
   onAdd,
   onLogRecipe,
   onClose,
@@ -98,8 +124,13 @@ export default function AddEntryModal({
   const isScanned = prefill !== undefined && !isEdit
   const [mode, setMode] = useState<AddMode>('manual')
   const [form, setForm] = useState<FormState>(() =>
-    entry ? formFromEntry(entry) : prefill ? formFromNewEntry(prefill) : EMPTY_FORM,
+    entry
+      ? formFromEntry(entry, timeZone)
+      : prefill
+        ? formFromNewEntry(prefill, timeZone)
+        : emptyForm(timeZone),
   )
+  const [recipeLogTime, setRecipeLogTime] = useState(() => currentTimeInputValue(timeZone))
   const [selectedIcon, setSelectedIcon] = useState<IconOption>(() =>
     entry ? iconFromEntry(entry) : prefill ? iconFromNewEntry(prefill) : iconOptions[0],
   )
@@ -177,10 +208,13 @@ export default function AddEntryModal({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  const resolveLoggedAt = () => loggedAtFromDayAndTime(logDate, form.logTime, timeZone)
+
   const close = () => {
-    setForm(entry ? formFromEntry(entry) : EMPTY_FORM)
+    setForm(entry ? formFromEntry(entry, timeZone) : emptyForm(timeZone))
     setSelectedIcon(entry ? iconFromEntry(entry) : iconOptions[0])
     setEntryServings('1')
+    setRecipeLogTime(currentTimeInputValue(timeZone))
     setError(null)
     onClose()
   }
@@ -209,11 +243,18 @@ export default function AddEntryModal({
       return
     }
 
-    const perServingEntry: NewFoodEntry = {
+    const loggedAt = resolveLoggedAt()
+    if (!loggedAt.ok) {
+      setError(loggedAt.error)
+      return
+    }
+
+    const perServingEntry: FoodEntryWrite = {
       icon: selectedIcon.icon,
       iconBg: selectedIcon.bg,
       iconColor: selectedIcon.color,
       ...validated.value,
+      loggedAt: loggedAt.value,
     }
     const loggedEntry =
       isEdit || servings === 1
@@ -261,10 +302,16 @@ export default function AddEntryModal({
       return
     }
 
+    const loggedAt = loggedAtFromDayAndTime(logDate, recipeLogTime, timeZone)
+    if (!loggedAt.ok) {
+      setError(loggedAt.error)
+      return
+    }
+
     setAdding(true)
     setError(null)
     try {
-      await onLogRecipe(selectedRecipeId, servings)
+      await onLogRecipe(selectedRecipeId, servings, { loggedAt: loggedAt.value })
       close()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log recipe')
@@ -288,7 +335,7 @@ export default function AddEntryModal({
         </h3>
         <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
           {isEdit
-            ? 'Update this food item, including its icon and nutrition values.'
+            ? 'Update this food item, including when you ate it, its icon, and nutrition values.'
             : isScanned
               ? 'Review the scanned product, set how many servings you had, and adjust nutrition values if needed.'
               : "Log a new food item to today's entries."}
@@ -356,6 +403,18 @@ export default function AddEntryModal({
                   ))
                 )}
               </select>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="entry-recipe-log-time" style={labelBase}>
+                Log time
+              </label>
+              <input
+                id="entry-recipe-log-time"
+                type="time"
+                value={recipeLogTime}
+                onChange={(e) => setRecipeLogTime(e.target.value)}
+                style={inputBase}
+              />
             </div>
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="entry-recipe-servings" style={labelBase}>
@@ -493,6 +552,22 @@ export default function AddEntryModal({
             placeholder="e.g. Lunch"
             style={inputBase}
           />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label htmlFor="entry-log-time" style={labelBase}>
+            Log time
+          </label>
+          <input
+            id="entry-log-time"
+            type="time"
+            value={form.logTime}
+            onChange={(e) => update('logTime', e.target.value)}
+            style={inputBase}
+          />
+          <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+            When you ate this meal. Used for the Eating Times chart.
+          </p>
         </div>
 
         <div className="modal-form-grid" style={{ marginBottom: 24 }}>

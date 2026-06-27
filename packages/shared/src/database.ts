@@ -473,6 +473,72 @@ export type Database = {
         }
         Relationships: []
       }
+      food_entry_shares: {
+        Row: {
+          id: string
+          food_entry_id: string
+          owner_id: string
+          shared_with_user_id: string
+          owner_display_name: string
+          shared_with_display_name: string
+          saved_copy_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          food_entry_id: string
+          owner_id: string
+          shared_with_user_id: string
+          owner_display_name: string
+          shared_with_display_name: string
+          saved_copy_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          food_entry_id?: string
+          owner_id?: string
+          shared_with_user_id?: string
+          owner_display_name?: string
+          shared_with_display_name?: string
+          saved_copy_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      activity_shares: {
+        Row: {
+          id: string
+          activity_id: string
+          owner_id: string
+          shared_with_user_id: string
+          owner_display_name: string
+          shared_with_display_name: string
+          saved_copy_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activity_id: string
+          owner_id: string
+          shared_with_user_id: string
+          owner_display_name: string
+          shared_with_display_name: string
+          saved_copy_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activity_id?: string
+          owner_id?: string
+          shared_with_user_id?: string
+          owner_display_name?: string
+          shared_with_display_name?: string
+          saved_copy_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string

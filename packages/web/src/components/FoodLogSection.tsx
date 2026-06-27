@@ -1,18 +1,25 @@
 import { useState } from 'react'
 import type { MappedBarcodeProduct } from '../lib/openFoodFacts'
-import type { FoodEntry, NewFoodEntry } from '../lib/entries'
+import type { FoodEntry, FoodEntryWrite } from '../lib/entries'
 import AddEntryModal from './AddEntryModal'
 import BarcodeScannerModal from './BarcodeScannerModal'
 import FoodLogEntryStats from './FoodLogEntryStats'
+import ShareModal from './ShareModal'
 
 interface FoodLogSectionProps {
   entries: FoodEntry[]
+  logDate: string
+  timeZone: string
   onAdd?: (
-    entry: NewFoodEntry,
-    options?: { saveAsRecipe?: boolean; perServing?: NewFoodEntry },
+    entry: FoodEntryWrite,
+    options?: { saveAsRecipe?: boolean; perServing?: FoodEntryWrite },
   ) => Promise<void>
-  onLogRecipe?: (recipeId: string, servings: number) => Promise<void>
-  onEdit?: (id: string, entry: NewFoodEntry) => Promise<void>
+  onLogRecipe?: (
+    recipeId: string,
+    servings: number,
+    options?: { loggedAt?: string },
+  ) => Promise<void>
+  onEdit?: (id: string, entry: FoodEntryWrite) => Promise<void>
   onDelete?: (id: string) => Promise<void>
   readOnly?: boolean
   title?: string
@@ -25,12 +32,14 @@ interface FoodLogSectionProps {
   onAddFormOpenChange?: (open: boolean) => void
   scannerOpen?: boolean
   onScannerOpenChange?: (open: boolean) => void
-  prefillEntry?: NewFoodEntry | null
-  onPrefillEntryChange?: (entry: NewFoodEntry | null) => void
+  prefillEntry?: FoodEntryWrite | null
+  onPrefillEntryChange?: (entry: FoodEntryWrite | null) => void
 }
 
 export default function FoodLogSection({
   entries,
+  logDate,
+  timeZone,
   onAdd,
   onLogRecipe,
   onEdit,
@@ -52,8 +61,9 @@ export default function FoodLogSection({
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
   const [internalShowAddForm, setInternalShowAddForm] = useState(false)
   const [internalShowScanner, setInternalShowScanner] = useState(false)
-  const [internalPrefillEntry, setInternalPrefillEntry] = useState<NewFoodEntry | null>(null)
+  const [internalPrefillEntry, setInternalPrefillEntry] = useState<FoodEntryWrite | null>(null)
   const [editingEntry, setEditingEntry] = useState<FoodEntry | null>(null)
+  const [sharingEntry, setSharingEntry] = useState<FoodEntry | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const expanded = collapsible ? internalExpanded : true
@@ -164,7 +174,7 @@ export default function FoodLogSection({
                       <span style={{ color: '#a1a1aa' }}>caffeine</span>
                     </span>
                   )}
-                  {(onEdit || (!readOnly && onDelete)) && (
+                  {(onEdit || !readOnly) && (
                     <span
                       style={{
                         display: 'inline-flex',
@@ -173,6 +183,24 @@ export default function FoodLogSection({
                         marginLeft: 'auto',
                       }}
                     >
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setSharingEntry(item)}
+                          aria-label="Share entry"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#a1a1aa',
+                            padding: 0,
+                            fontSize: 13,
+                          }}
+                          title="Share entry"
+                        >
+                          <i className="fa-regular fa-share-from-square" />
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           type="button"
@@ -242,6 +270,8 @@ export default function FoodLogSection({
       {showAddForm && onAdd && (
         <AddEntryModal
           prefill={currentPrefillEntry ?? undefined}
+          logDate={logDate}
+          timeZone={timeZone}
           onAdd={onAdd}
           onLogRecipe={onLogRecipe}
           onClose={() => {
@@ -253,11 +283,21 @@ export default function FoodLogSection({
       {editingEntry && onEdit && (
         <AddEntryModal
           entry={editingEntry}
+          logDate={logDate}
+          timeZone={timeZone}
           onAdd={async (entry) => {
             await onEdit(editingEntry.id, entry)
             setEditingEntry(null)
           }}
           onClose={() => setEditingEntry(null)}
+        />
+      )}
+      {sharingEntry && (
+        <ShareModal
+          resourceType="entry"
+          resourceId={sharingEntry.id}
+          resourceName={sharingEntry.name}
+          onClose={() => setSharingEntry(null)}
         />
       )}
     </>

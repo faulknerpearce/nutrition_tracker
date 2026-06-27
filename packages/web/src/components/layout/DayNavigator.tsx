@@ -1,4 +1,4 @@
-import { formatDayLabel } from '@nutrition-tracker/shared'
+import { formatDayLabel, formatMonthDayLabel, formatWeekdayHeadline } from '@nutrition-tracker/shared'
 import type { ReactNode } from 'react'
 
 interface DayNavigatorProps {
@@ -8,6 +8,7 @@ interface DayNavigatorProps {
   itemLabel?: { singular: string; plural: string }
   canGoBack?: boolean
   canGoForward?: boolean
+  compact?: boolean
   onPrevious: () => void
   onNext: () => void
 }
@@ -19,13 +20,17 @@ export default function DayNavigator({
   itemLabel = { singular: 'entry', plural: 'entries' },
   canGoBack = true,
   canGoForward = false,
+  compact = false,
   onPrevious,
   onNext,
 }: DayNavigatorProps) {
   const defaultMeta = `${itemCount} ${itemCount === 1 ? itemLabel.singular : itemLabel.plural}`
+  const metaContent = meta ?? defaultMeta
 
   return (
-    <div className={`inputs-day-nav${canGoForward ? '' : ' inputs-day-nav-today'}`}>
+    <div
+      className={`inputs-day-nav${canGoForward ? '' : ' inputs-day-nav-today'}${compact ? ' inputs-day-nav-compact' : ''}`}
+    >
       <button
         type="button"
         className="inputs-day-nav-button"
@@ -37,9 +42,17 @@ export default function DayNavigator({
       </button>
 
       <div className="inputs-day-nav-label">
-        <div className="inputs-day-nav-title">{formatDayLabel(date)}</div>
-        <div className="inputs-day-nav-date">{date}</div>
-        <div className="inputs-day-nav-meta">{meta ?? defaultMeta}</div>
+        <div className="inputs-day-nav-title">
+          {compact ? formatWeekdayHeadline(date) : formatDayLabel(date)}
+        </div>
+        {compact ? (
+          <div className="inputs-day-nav-calendar">{formatMonthDayLabel(date)}</div>
+        ) : (
+          <>
+            <div className="inputs-day-nav-date">{date}</div>
+            <div className="inputs-day-nav-meta">{metaContent}</div>
+          </>
+        )}
       </div>
 
       <button

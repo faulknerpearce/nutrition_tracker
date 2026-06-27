@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatDayLabel,
+  formatLogTime,
+  formatMonthDayLabel,
+  formatTimeInputValue,
+  formatWeekdayHeadline,
+  loggedAtFromDayAndTime,
+  minuteInTimeZone,
   offsetDateISO,
   parseISODate,
   shiftISODate,
@@ -111,5 +117,60 @@ describe('formatDayLabel', () => {
 
   it('formats other dates with weekday and month', () => {
     expect(formatDayLabel('2026-06-15', now)).toBe('Monday, Jun 15')
+  })
+})
+
+describe('formatWeekdayHeadline', () => {
+  const now = new Date(2026, 5, 23)
+
+  it('labels today and yesterday relative to now', () => {
+    expect(formatWeekdayHeadline('2026-06-23', now)).toBe('Today')
+    expect(formatWeekdayHeadline('2026-06-22', now)).toBe('Yesterday')
+  })
+
+  it('uses weekday name only for other dates', () => {
+    expect(formatWeekdayHeadline('2026-06-15', now)).toBe('Monday')
+  })
+})
+
+describe('formatMonthDayLabel', () => {
+  it('formats month and day without year', () => {
+    expect(formatMonthDayLabel('2026-06-27')).toBe('June 27')
+    expect(formatMonthDayLabel('2026-06-15')).toBe('June 15')
+  })
+})
+
+describe('minuteInTimeZone', () => {
+  it('returns the local minute for a timestamp', () => {
+    expect(minuteInTimeZone('2026-06-22T08:15:00Z', 'UTC')).toBe(15)
+    expect(minuteInTimeZone('2026-06-22T08:45:00Z', 'UTC')).toBe(45)
+  })
+})
+
+describe('formatLogTime', () => {
+  it('formats a local log time', () => {
+    expect(formatLogTime('2026-06-22T08:15:00Z', 'UTC')).toMatch(/8:15\s*AM/i)
+  })
+})
+
+describe('formatTimeInputValue', () => {
+  it('formats an ISO timestamp for an HTML time input', () => {
+    expect(formatTimeInputValue('2026-06-22T08:15:00Z', 'UTC')).toBe('08:15')
+  })
+})
+
+describe('loggedAtFromDayAndTime', () => {
+  it('builds an ISO timestamp for a day and local time', () => {
+    const result = loggedAtFromDayAndTime('2026-06-22', '08:15', 'UTC')
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value).toBe('2026-06-22T08:15:00.000Z')
+      expect(formatTimeInputValue(result.value, 'UTC')).toBe('08:15')
+    }
+  })
+
+  it('rejects invalid time values', () => {
+    expect(loggedAtFromDayAndTime('2026-06-22', '25:00', 'UTC').ok).toBe(false)
+    expect(loggedAtFromDayAndTime('2026-06-22', 'noon', 'UTC').ok).toBe(false)
   })
 })

@@ -187,6 +187,7 @@ export async function logRecipe(options: {
   recipeId: string
   servings?: number
   entryDate?: string
+  loggedAt?: string
 }): Promise<FoodEntry> {
   const recipe = await fetchRecipe(options.recipeId)
   const servings = validateServingsLogged(options.servings ?? 1)
@@ -212,6 +213,7 @@ export async function logRecipe(options: {
       entry_date: options.entryDate ?? todayISO(),
       recipe_id: recipe.id,
       servings_logged: servings,
+      ...(options.loggedAt ? { created_at: options.loggedAt } : {}),
     })
     .select()
     .single()

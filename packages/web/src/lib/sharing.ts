@@ -1,13 +1,22 @@
 import {
+  mapActivityExerciseRow,
+  mapActivityRow,
+  mapActivityShareRow,
+  mapEntryShareRow,
   mapRecipeIngredientRow,
   mapRecipeRow,
   mapRecipeShareRow,
+  mapRow,
   mapShareUserRow,
   mapWorkoutExerciseRow,
   mapWorkoutRow,
   mapWorkoutShareRow,
   perServingTotals,
   sumRecipeIngredients,
+  type Activity,
+  type ActivityShareRecord,
+  type EntryShareRecord,
+  type FoodEntry,
   type RecipeShareRecord,
   type RecipeSummary,
   type ShareUserResult,
@@ -24,6 +33,16 @@ export interface SharedRecipeItem {
 export interface SharedWorkoutItem {
   share: WorkoutShareRecord
   workout: WorkoutSummary
+}
+
+export interface SharedEntryItem {
+  share: EntryShareRecord
+  entry: FoodEntry
+}
+
+export interface SharedActivityItem {
+  share: ActivityShareRecord
+  activity: Activity
 }
 
 async function requireUserId(): Promise<string> {
@@ -82,6 +101,56 @@ export async function shareRecipe(
   return mapRecipeShareRow(data)
 }
 
+export async function shareEntry(
+  foodEntryId: string,
+  recipientUserId: string,
+  recipientDisplayName: string,
+): Promise<EntryShareRecord> {
+  const userId = await requireUserId()
+  if (recipientUserId === userId) throw new Error('You cannot share with yourself')
+
+  const ownerDisplayName = await requireDisplayName(userId)
+  const { data, error } = await supabase
+    .from('food_entry_shares')
+    .insert({
+      food_entry_id: foodEntryId,
+      owner_id: userId,
+      shared_with_user_id: recipientUserId,
+      owner_display_name: ownerDisplayName,
+      shared_with_display_name: recipientDisplayName,
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return mapEntryShareRow(data)
+}
+
+export async function shareActivity(
+  activityId: string,
+  recipientUserId: string,
+  recipientDisplayName: string,
+): Promise<ActivityShareRecord> {
+  const userId = await requireUserId()
+  if (recipientUserId === userId) throw new Error('You cannot share with yourself')
+
+  const ownerDisplayName = await requireDisplayName(userId)
+  const { data, error } = await supabase
+    .from('activity_shares')
+    .insert({
+      activity_id: activityId,
+      owner_id: userId,
+      shared_with_user_id: recipientUserId,
+      owner_display_name: ownerDisplayName,
+      shared_with_display_name: recipientDisplayName,
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return mapActivityShareRow(data)
+}
+
 export async function shareWorkout(
   workoutId: string,
   recipientUserId: string,
@@ -112,6 +181,16 @@ export async function revokeRecipeShare(shareId: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+export async function revokeEntryShare(shareId: string): Promise<void> {
+  const { error } = await supabase.from('food_entry_shares').delete().eq('id', shareId)
+  if (error) throw new Error(error.message)
+}
+
+export async function revokeActivityShare(shareId: string): Promise<void> {
+  const { error } = await supabase.from('activity_shares').delete().eq('id', shareId)
+  if (error) throw new Error(error.message)
+}
+
 export async function revokeWorkoutShare(shareId: string): Promise<void> {
   const { error } = await supabase.from('workout_shares').delete().eq('id', shareId)
   if (error) throw new Error(error.message)
@@ -125,6 +204,30 @@ export async function fetchRecipeSharesForResource(recipeId: string): Promise<Re
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
   return (data ?? []).map(mapRecipeShareRow)
+}
+
+export async function fetchEntrySharesForResource(
+  foodEntryId: string,
+): Promise<EntryShareRecord[]> {
+  const { data, error } = await supabase
+    .from('food_entry_shares')
+    .select('*')
+    .eq('food_entry_id', foodEntryId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data ?? []).map(mapEntryShareRow)
+}
+
+export async function fetchActivitySharesForResource(
+  activityId: string,
+): Promise<ActivityShareRecord[]> {
+  const { data, error } = await supabase
+    .from('activity_shares')
+    .select('*')
+    .eq('activity_id', activityId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data ?? []).map(mapActivityShareRow)
 }
 
 export async function fetchWorkoutSharesForResource(
@@ -237,6 +340,96 @@ export async function fetchRecipesSharedWithMe(): Promise<SharedRecipeItem[]> {
     .filter((item): item is SharedRecipeItem => item !== null)
 }
 
+export async function fetchEntriesSharedWithMe(): Promise<SharedEntryItem[]> {
+  const userId = await requireUserId()
+  const { data: shares, error } = await supabase
+    .from('food_entry_shares')
+    .select('*')
+    .eq('shared_with_user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  if (!shares?.length) return []
+
+  const entryIds = shares.map((share) => share.food_entry_id)
+  const { data: entryRows, error: entryError } = await supabase
+    .from('food_entries')
+    .select('*')
+    .in('id', entryIds)
+  if (entryError) throw new Error(entryError.message)
+
+  const entryById = new Map((entryRows ?? []).map((row) => [row.id, mapRow(row)]))
+
+  return shares
+    .map((share) => {
+      const entry = entryById.get(share.food_entry_id)
+      if (!entry) return null
+      return { share: mapEntryShareRow(share), entry }
+    })
+    .filter((item): item is SharedEntryItem => item !== null)
+}
+
+async function attachActivityExercises(activities: Activity[]): Promise<Activity[]> {
+  if (activities.length === 0) return activities
+
+  const workoutActivityIds = activities
+    .filter((activity) => activity.workoutId !== null)
+    .map((activity) => activity.id)
+  if (workoutActivityIds.length === 0) return activities
+
+  const { data, error } = await supabase
+    .from('activity_exercises')
+    .select('*')
+    .in('activity_id', workoutActivityIds)
+    .order('sort_order', { ascending: true })
+  if (error) throw new Error(error.message)
+
+  const exercisesByActivity = new Map<string, ReturnType<typeof mapActivityExerciseRow>[]>()
+  for (const row of data ?? []) {
+    const mapped = mapActivityExerciseRow(row)
+    const list = exercisesByActivity.get(row.activity_id) ?? []
+    list.push(mapped)
+    exercisesByActivity.set(row.activity_id, list)
+  }
+
+  return activities.map((activity) => ({
+    ...activity,
+    exercises: exercisesByActivity.get(activity.id) ?? activity.exercises,
+  }))
+}
+
+export async function fetchActivitiesSharedWithMe(): Promise<SharedActivityItem[]> {
+  const userId = await requireUserId()
+  const { data: shares, error } = await supabase
+    .from('activity_shares')
+    .select('*')
+    .eq('shared_with_user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  if (!shares?.length) return []
+
+  const activityIds = shares.map((share) => share.activity_id)
+  const { data: activityRows, error: activityError } = await supabase
+    .from('activities')
+    .select('*')
+    .in('id', activityIds)
+  if (activityError) throw new Error(activityError.message)
+
+  const activityById = new Map(
+    (await attachActivityExercises((activityRows ?? []).map(mapActivityRow))).map((activity) => [
+      activity.id,
+      activity,
+    ]),
+  )
+
+  return shares
+    .map((share) => {
+      const activity = activityById.get(share.activity_id)
+      if (!activity) return null
+      return { share: mapActivityShareRow(share), activity }
+    })
+    .filter((item): item is SharedActivityItem => item !== null)
+}
+
 export async function fetchWorkoutsSharedWithMe(): Promise<SharedWorkoutItem[]> {
   const userId = await requireUserId()
   const { data: shares, error } = await supabase
@@ -261,6 +454,22 @@ export async function fetchWorkoutsSharedWithMe(): Promise<SharedWorkoutItem[]> 
 export async function markRecipeShareSaved(shareId: string, savedCopyId: string): Promise<void> {
   const { error } = await supabase
     .from('recipe_shares')
+    .update({ saved_copy_id: savedCopyId })
+    .eq('id', shareId)
+  if (error) throw new Error(error.message)
+}
+
+export async function markActivityShareSaved(shareId: string, savedCopyId: string): Promise<void> {
+  const { error } = await supabase
+    .from('activity_shares')
+    .update({ saved_copy_id: savedCopyId })
+    .eq('id', shareId)
+  if (error) throw new Error(error.message)
+}
+
+export async function markEntryShareSaved(shareId: string, savedCopyId: string): Promise<void> {
+  const { error } = await supabase
+    .from('food_entry_shares')
     .update({ saved_copy_id: savedCopyId })
     .eq('id', shareId)
   if (error) throw new Error(error.message)

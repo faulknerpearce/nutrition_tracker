@@ -22,6 +22,7 @@ describe('mapActivityRow', () => {
       name: 'Evening Ride',
       activityType: 'Ride',
       activityDate: '2026-06-23',
+      loggedAt: '2026-06-23T18:00:00Z',
       distanceMeters: 15000,
       movingTimeSeconds: 3600,
       averageHeartrate: 132,

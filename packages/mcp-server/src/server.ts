@@ -56,6 +56,12 @@ const dateProperty = {
   description: 'ISO date (YYYY-MM-DD). Defaults to today. Past dates are allowed.',
 }
 
+const loggedAtProperty = {
+  type: 'string',
+  description:
+    'Optional ISO timestamp for when the entry was logged. Defaults to the current time.',
+}
+
 const foodFields = {
   name: { type: 'string', description: 'Name of the food item' },
   description: { type: 'string', description: 'Optional description (e.g. Lunch)' },
@@ -129,6 +135,7 @@ export const tools: Tool[] = [
     inputSchema: objectSchema(
       {
         date: dateProperty,
+        loggedAt: loggedAtProperty,
         ...foodFields,
       },
       ['name', 'calories', 'protein'],
@@ -142,6 +149,7 @@ export const tools: Tool[] = [
       {
         id: { type: 'string', description: 'ID of the entry to update' },
         date: dateProperty,
+        loggedAt: loggedAtProperty,
         name: { type: 'string' },
         description: { type: 'string' },
         calories: { type: 'number' },
@@ -184,6 +192,7 @@ export const tools: Tool[] = [
     inputSchema: objectSchema(
       {
         date: dateProperty,
+        loggedAt: loggedAtProperty,
         ...activityFields,
       },
       ['name', 'activityType', 'durationMinutes'],
@@ -197,6 +206,7 @@ export const tools: Tool[] = [
       {
         id: { type: 'string', description: 'ID of the activity to update' },
         date: dateProperty,
+        loggedAt: loggedAtProperty,
         name: { type: 'string' },
         activityType: { type: 'string' },
         durationMinutes: { type: 'number' },

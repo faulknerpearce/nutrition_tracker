@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import InputsZone from './pages/InputsZone'
 import OutputsZone from './pages/OutputsZone'
 import ProfilePage from './pages/ProfilePage'
+import SharedWithMePage from './pages/SharedWithMePage'
 
 function useHashRoute() {
   const [route, setRoute] = useState<AppRoute>(() => parseHashRoute(window.location.hash))
@@ -55,6 +56,10 @@ function AppContent() {
         {route === 'profile' ? (
           <PageShell zone="profile">
             <ProfilePage />
+          </PageShell>
+        ) : route === 'shared' ? (
+          <PageShell zone="profile">
+            <SharedWithMePage />
           </PageShell>
         ) : route === 'inputs' || route === 'inputs/recipes' ? (
           <InputsZone route={route} />

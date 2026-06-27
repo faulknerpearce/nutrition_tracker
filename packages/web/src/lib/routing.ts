@@ -5,6 +5,7 @@ export type AppRoute =
   | 'outputs'
   | 'outputs/workouts'
   | 'profile'
+  | 'shared'
 
 export type AppZone = 'dashboard' | 'inputs' | 'outputs' | 'profile'
 
@@ -21,6 +22,7 @@ export function parseHashRoute(hash: string): AppRoute {
   if (path === 'inputs') return 'inputs'
   if (path === 'outputs') return 'outputs'
   if (path === 'profile') return 'profile'
+  if (path === 'shared') return 'shared'
   return 'dashboard'
 }
 
@@ -30,13 +32,14 @@ export function routeHref(route: AppRoute): string {
   if (route === 'outputs') return '#/outputs'
   if (route === 'outputs/workouts') return '#/outputs/workouts'
   if (route === 'profile') return '#/profile'
+  if (route === 'shared') return '#/shared'
   return '#/'
 }
 
 export function routeZone(route: AppRoute): AppZone {
   if (route.startsWith('inputs')) return 'inputs'
   if (route.startsWith('outputs')) return 'outputs'
-  if (route === 'profile') return 'profile'
+  if (route === 'profile' || route === 'shared') return 'profile'
   return 'dashboard'
 }
 

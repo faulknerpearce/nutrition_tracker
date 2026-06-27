@@ -11,7 +11,7 @@ interface CollapsiblePanelProps {
 export default function CollapsiblePanel({
   title,
   subtitle,
-  defaultExpanded = true,
+  defaultExpanded = false,
   children,
 }: CollapsiblePanelProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)

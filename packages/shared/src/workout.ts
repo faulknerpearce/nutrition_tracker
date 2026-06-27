@@ -53,6 +53,7 @@ export interface LogWorkoutInput {
   durationMinutes?: number
   calories?: number | null
   activityDate?: string
+  loggedAt?: string
 }
 
 function isPositiveInteger(value: unknown): value is number {

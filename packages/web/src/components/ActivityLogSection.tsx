@@ -1,13 +1,20 @@
 import { formatDistance, formatDuration } from '@nutrition-tracker/shared'
 import { useState } from 'react'
-import type { Activity, NewActivity } from '../lib/activities'
+import type { Activity, ActivityWrite } from '../lib/activities'
 import AddActivityModal from './AddActivityModal'
+import ShareModal from './ShareModal'
 
 interface ActivityLogSectionProps {
   activities: Activity[]
-  onAdd?: (activity: NewActivity) => Promise<void>
-  onLogWorkout?: (options: { workoutId: string; setsLogged: number }) => Promise<void>
-  onEdit?: (id: string, activity: NewActivity) => Promise<void>
+  logDate: string
+  timeZone: string
+  onAdd?: (activity: ActivityWrite) => Promise<void>
+  onLogWorkout?: (options: {
+    workoutId: string
+    setsLogged: number
+    loggedAt?: string
+  }) => Promise<void>
+  onEdit?: (id: string, activity: ActivityWrite) => Promise<void>
   onDelete?: (id: string) => Promise<void>
   title?: string
   subtitle?: string
@@ -30,6 +37,8 @@ const activityIcon: Record<string, string> = {
 
 export default function ActivityLogSection({
   activities,
+  logDate,
+  timeZone,
   onAdd,
   onLogWorkout,
   onEdit,
@@ -45,6 +54,7 @@ export default function ActivityLogSection({
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
   const [internalShowAddForm, setInternalShowAddForm] = useState(false)
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
+  const [sharingActivity, setSharingActivity] = useState<Activity | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const expanded = collapsible ? internalExpanded : true
@@ -129,7 +139,7 @@ export default function ActivityLogSection({
                       <span style={{ color: '#a1a1aa' }}>duration</span>
                     </span>
                     <span>
-                      <span style={{ fontWeight: 500, color: '#2563eb' }}>{formatDistance(item.distanceMeters)}</span>{' '}
+                      <span style={{ fontWeight: 500, color: '#0d9488' }}>{formatDistance(item.distanceMeters)}</span>{' '}
                       <span style={{ color: '#a1a1aa' }}>distance</span>
                     </span>
                     {item.calories !== null && (
@@ -138,16 +148,31 @@ export default function ActivityLogSection({
                         <span style={{ color: '#a1a1aa' }}>kcal burned</span>
                       </span>
                     )}
-                    {(onEdit || onDelete) && (
-                      <span
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        marginLeft: 'auto',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSharingActivity(item)}
+                        aria-label="Share activity"
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          marginLeft: 'auto',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#a1a1aa',
+                          padding: 0,
+                          fontSize: 13,
                         }}
+                        title="Share activity"
                       >
-                        {onEdit && (
+                        <i className="fa-regular fa-share-from-square" />
+                      </button>
+                      {onEdit && (
                           <button
                             type="button"
                             onClick={() => setEditingActivity(item)}
@@ -182,8 +207,7 @@ export default function ActivityLogSection({
                             <i className="fa-regular fa-trash-can" />
                           </button>
                         )}
-                      </span>
-                    )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -198,6 +222,8 @@ export default function ActivityLogSection({
     <>
       {showAddForm && onAdd && showActions && (
         <AddActivityModal
+          logDate={logDate}
+          timeZone={timeZone}
           onAdd={onAdd}
           onLogWorkout={
             onLogWorkout
@@ -213,11 +239,21 @@ export default function ActivityLogSection({
       {editingActivity && onEdit && (
         <AddActivityModal
           activity={editingActivity}
+          logDate={logDate}
+          timeZone={timeZone}
           onAdd={async (activity) => {
             await onEdit(editingActivity.id, activity)
             setEditingActivity(null)
           }}
           onClose={() => setEditingActivity(null)}
+        />
+      )}
+      {sharingActivity && (
+        <ShareModal
+          resourceType="activity"
+          resourceId={sharingActivity.id}
+          resourceName={sharingActivity.name}
+          onClose={() => setSharingActivity(null)}
         />
       )}
     </>

@@ -1,4 +1,5 @@
 import {
+  buildForkEntryInput,
   buildInsertPayload,
   buildUpdatePayload,
   mapRow,
@@ -7,12 +8,13 @@ import {
   sumTotals,
   todayISO,
   type FoodEntry,
-  type NewFoodEntry,
+  type FoodEntryWrite,
   type Totals,
 } from '@nutrition-tracker/shared'
+import { markEntryShareSaved } from './sharing'
 import { supabase } from './supabase'
 
-export type { FoodEntry, NewFoodEntry }
+export type { FoodEntry, FoodEntryWrite }
 
 export interface DaySummary {
   date: string
@@ -75,7 +77,7 @@ export async function fetchDaySummaries(daysBack = 30): Promise<DaySummary[]> {
 }
 
 export async function addEntry(
-  input: NewFoodEntry,
+  input: FoodEntryWrite,
   options?: { entryDate?: string },
 ): Promise<FoodEntry> {
   const userId = await requireUserId()
@@ -85,19 +87,23 @@ export async function addEntry(
   const entry = {
     ...buildInsertPayload(parsed.value, crypto.randomUUID(), userId),
     entry_date: options?.entryDate ?? todayISO(),
+    ...(input.loggedAt ? { created_at: input.loggedAt } : {}),
   }
   const { data, error } = await supabase.from('food_entries').insert(entry).select().single()
   if (error) throw new Error(error.message)
   return mapRow(data)
 }
 
-export async function updateEntry(id: string, input: NewFoodEntry): Promise<FoodEntry> {
+export async function updateEntry(id: string, input: FoodEntryWrite): Promise<FoodEntry> {
   const parsed = parseEntryInput(input as Record<string, unknown>)
   if (!parsed.ok) throw new Error(parsed.error)
 
   const { data, error } = await supabase
     .from('food_entries')
-    .update(buildUpdatePayload(parsed.value))
+    .update({
+      ...buildUpdatePayload(parsed.value),
+      ...(input.loggedAt ? { created_at: input.loggedAt } : {}),
+    })
     .eq('id', id)
     .select()
     .single()
@@ -108,4 +114,23 @@ export async function updateEntry(id: string, input: NewFoodEntry): Promise<Food
 export async function deleteEntry(id: string): Promise<void> {
   const { error } = await supabase.from('food_entries').delete().eq('id', id)
   if (error) throw new Error(error.message)
+}
+
+export async function forkEntry(foodEntryId: string, shareId?: string): Promise<FoodEntry> {
+  const { data: row, error: fetchError } = await supabase
+    .from('food_entries')
+    .select('*')
+    .eq('id', foodEntryId)
+    .single()
+  if (fetchError) throw new Error(fetchError.message)
+
+  const source = mapRow(row)
+  const input = buildForkEntryInput(source)
+  const entry = await addEntry(input, { entryDate: todayISO() })
+
+  if (shareId) {
+    await markEntryShareSaved(shareId, entry.id)
+  }
+
+  return entry
 }

@@ -1,4 +1,5 @@
 import type { RecipeInput, RecipeWithIngredients } from './recipe.js'
+import type { Activity, ActivityWrite, FoodEntry, FoodEntryWrite } from './types.js'
 import type { WorkoutInput, WorkoutWithExercises } from './workout.js'
 
 export interface ShareUserResult {
@@ -21,6 +22,28 @@ export interface RecipeShareRecord {
 export interface WorkoutShareRecord {
   id: string
   workoutId: string
+  ownerId: string
+  sharedWithUserId: string
+  ownerDisplayName: string
+  sharedWithDisplayName: string
+  savedCopyId: string | null
+  createdAt: string
+}
+
+export interface EntryShareRecord {
+  id: string
+  foodEntryId: string
+  ownerId: string
+  sharedWithUserId: string
+  ownerDisplayName: string
+  sharedWithDisplayName: string
+  savedCopyId: string | null
+  createdAt: string
+}
+
+export interface ActivityShareRecord {
+  id: string
+  activityId: string
   ownerId: string
   sharedWithUserId: string
   ownerDisplayName: string
@@ -63,6 +86,50 @@ export function mapRecipeShareRow(row: {
   }
 }
 
+export function mapEntryShareRow(row: {
+  id: string
+  food_entry_id: string
+  owner_id: string
+  shared_with_user_id: string
+  owner_display_name: string
+  shared_with_display_name: string
+  saved_copy_id: string | null
+  created_at: string
+}): EntryShareRecord {
+  return {
+    id: row.id,
+    foodEntryId: row.food_entry_id,
+    ownerId: row.owner_id,
+    sharedWithUserId: row.shared_with_user_id,
+    ownerDisplayName: row.owner_display_name,
+    sharedWithDisplayName: row.shared_with_display_name,
+    savedCopyId: row.saved_copy_id,
+    createdAt: row.created_at,
+  }
+}
+
+export function mapActivityShareRow(row: {
+  id: string
+  activity_id: string
+  owner_id: string
+  shared_with_user_id: string
+  owner_display_name: string
+  shared_with_display_name: string
+  saved_copy_id: string | null
+  created_at: string
+}): ActivityShareRecord {
+  return {
+    id: row.id,
+    activityId: row.activity_id,
+    ownerId: row.owner_id,
+    sharedWithUserId: row.shared_with_user_id,
+    ownerDisplayName: row.owner_display_name,
+    sharedWithDisplayName: row.shared_with_display_name,
+    savedCopyId: row.saved_copy_id,
+    createdAt: row.created_at,
+  }
+}
+
 export function mapWorkoutShareRow(row: {
   id: string
   workout_id: string
@@ -82,6 +149,34 @@ export function mapWorkoutShareRow(row: {
     sharedWithDisplayName: row.shared_with_display_name,
     savedCopyId: row.saved_copy_id,
     createdAt: row.created_at,
+  }
+}
+
+export function buildForkActivityInput(source: Activity): ActivityWrite {
+  return {
+    name: source.name,
+    activityType: source.activityType,
+    movingTimeSeconds: source.movingTimeSeconds,
+    distanceMeters: source.distanceMeters,
+    averageHeartrate: source.averageHeartrate,
+    maxHeartrate: source.maxHeartrate,
+    calories: source.calories,
+  }
+}
+
+export function buildForkEntryInput(source: FoodEntry): FoodEntryWrite {
+  return {
+    icon: source.icon,
+    iconBg: source.iconBg,
+    iconColor: source.iconColor,
+    name: source.name,
+    description: source.description,
+    calories: source.calories,
+    protein: source.protein,
+    carbs: source.carbs,
+    fat: source.fat,
+    fiber: source.fiber,
+    caffeine: source.caffeine,
   }
 }
 

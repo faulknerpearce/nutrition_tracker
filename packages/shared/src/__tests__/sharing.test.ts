@@ -1,5 +1,81 @@
 import { describe, expect, it } from 'vitest'
-import { buildForkRecipeInput, buildForkWorkoutInput } from '../sharing.js'
+import {
+  buildForkActivityInput,
+  buildForkEntryInput,
+  buildForkRecipeInput,
+  buildForkWorkoutInput,
+} from '../sharing.js'
+import type { Activity, FoodEntry } from '../types.js'
+
+const sampleEntry: FoodEntry = {
+  id: 'entry-1',
+  icon: 'fa-utensils',
+  iconBg: '#fff7ed',
+  iconColor: '#ea580c',
+  name: 'Oatmeal',
+  description: 'Breakfast',
+  calories: 350,
+  protein: 12,
+  carbs: 58,
+  fat: 6,
+  fiber: 8,
+  caffeine: 0,
+  loggedAt: '2026-06-22T08:15:00Z',
+}
+
+const sampleActivity: Activity = {
+  id: 'activity-1',
+  name: 'Morning Run',
+  activityType: 'Run',
+  activityDate: '2026-06-25',
+  loggedAt: '2026-06-25T07:00:00Z',
+  distanceMeters: 5000,
+  movingTimeSeconds: 1800,
+  averageHeartrate: 145,
+  maxHeartrate: 162,
+  calories: 320,
+  workoutId: null,
+  workoutSetsLogged: null,
+  exercises: [],
+}
+
+describe('buildForkActivityInput', () => {
+  it('copies activity fields without id, date, or exercises', () => {
+    const input = buildForkActivityInput(sampleActivity)
+    expect(input).toEqual({
+      name: 'Morning Run',
+      activityType: 'Run',
+      movingTimeSeconds: 1800,
+      distanceMeters: 5000,
+      averageHeartrate: 145,
+      maxHeartrate: 162,
+      calories: 320,
+    })
+    expect(input).not.toHaveProperty('id')
+    expect(input).not.toHaveProperty('loggedAt')
+  })
+})
+
+describe('buildForkEntryInput', () => {
+  it('copies food entry fields without id or loggedAt', () => {
+    const input = buildForkEntryInput(sampleEntry)
+    expect(input).toEqual({
+      icon: 'fa-utensils',
+      iconBg: '#fff7ed',
+      iconColor: '#ea580c',
+      name: 'Oatmeal',
+      description: 'Breakfast',
+      calories: 350,
+      protein: 12,
+      carbs: 58,
+      fat: 6,
+      fiber: 8,
+      caffeine: 0,
+    })
+    expect(input).not.toHaveProperty('id')
+    expect(input).not.toHaveProperty('loggedAt')
+  })
+})
 
 describe('buildForkRecipeInput', () => {
   it('copies recipe fields without ingredient ids', () => {

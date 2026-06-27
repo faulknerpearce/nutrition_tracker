@@ -1,4 +1,9 @@
-import { groupEntriesByHour } from '@nutrition-tracker/shared'
+import {
+  annotateMealMarkers,
+  formatLogTime,
+  mapEntriesToMealMarkers,
+  niceCalorieAxisMax,
+} from '@nutrition-tracker/shared'
 import { useMemo, useState } from 'react'
 import type { FoodEntry } from '../../lib/entries'
 
@@ -21,22 +26,47 @@ function formatAxisHourLabel(hour: number): string {
   return `${hour - 12}p`
 }
 
-function formatTooltip(hour: number, entryCount: number): string {
-  const countLabel = entryCount === 1 ? 'entry' : 'entries'
-  return `${formatHourLabel(hour)}: ${entryCount} ${countLabel}`
-}
+const DOT_OFFSET_PX = 7
 
 export default function HourlyConsumptionChart({ entries, timeZone }: HourlyConsumptionChartProps) {
-  const [hoveredHour, setHoveredHour] = useState<number | null>(null)
-  const buckets = useMemo(() => groupEntriesByHour(entries, timeZone), [entries, timeZone])
-  const maxCount = useMemo(() => Math.max(...buckets.map((bucket) => bucket.entryCount), 0), [buckets])
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
 
-  const peakBucket = useMemo(() => {
-    if (maxCount === 0) return null
-    return buckets.reduce((peak, bucket) => (bucket.entryCount > peak.entryCount ? bucket : peak))
-  }, [buckets, maxCount])
+  const { markersByHour, axisMax } = useMemo(() => {
+    const annotated = annotateMealMarkers(mapEntriesToMealMarkers(entries, timeZone))
+    const maxCalories = entries.reduce((max, entry) => Math.max(max, entry.calories), 0)
+    const axisMax = niceCalorieAxisMax(maxCalories)
+    const grouped = Array.from({ length: 24 }, () => [] as Array<{
+      entryId: string
+      calories: number
+      slotIndex: number
+      slotTotal: number
+      label: string
+    }>)
 
-  const hoveredBucket = hoveredHour !== null ? buckets[hoveredHour] : null
+    annotated.forEach((marker, index) => {
+      const entry = entries[index]
+      if (!entry || marker.hour < 0 || marker.hour > 23) return
+      grouped[marker.hour].push({
+        entryId: entry.id,
+        calories: marker.calories,
+        slotIndex: marker.slotIndex,
+        slotTotal: marker.slotTotal,
+        label: formatLogTime(entry.loggedAt, timeZone),
+      })
+    })
+
+    return { markersByHour: grouped, axisMax }
+  }, [entries, timeZone])
+
+  const selectedEntry = useMemo(
+    () => entries.find((entry) => entry.id === selectedEntryId) ?? null,
+    [entries, selectedEntryId],
+  )
+
+  const yAxisLabels = useMemo(() => {
+    const mid = Math.round(axisMax / 2)
+    return [axisMax, mid, 0]
+  }, [axisMax])
 
   if (entries.length === 0) {
     return (
@@ -53,61 +83,75 @@ export default function HourlyConsumptionChart({ entries, timeZone }: HourlyCons
     )
   }
 
-  const ariaLabel = peakBucket
-    ? `${entries.length} entries logged. Peak hour: ${formatHourLabel(peakBucket.hour)} with ${peakBucket.entryCount} entries.`
-    : `${entries.length} entries logged.`
+  const ariaLabel = `${entries.length} ${entries.length === 1 ? 'meal' : 'meals'} logged across the day.`
 
   return (
     <div className="hourly-chart-wrap">
       <div
-        className={`hourly-chart-tooltip${hoveredBucket ? '' : ' hourly-chart-tooltip-idle'}`}
+        className={`hourly-chart-tooltip${selectedEntry ? '' : ' hourly-chart-tooltip-idle'}`}
         aria-live="polite"
       >
-        {hoveredBucket
-          ? formatTooltip(hoveredBucket.hour, hoveredBucket.entryCount)
-          : 'Hover a bar to see details'}
+        {selectedEntry
+          ? `${selectedEntry.name} · ${formatLogTime(selectedEntry.loggedAt, timeZone)} · ${selectedEntry.calories} kcal`
+          : 'Select a dot to see meal details'}
       </div>
 
       <div className="hourly-chart-scroll">
-        <div role="img" aria-label={ariaLabel} className="hourly-chart-grid hourly-chart-bars">
-          {buckets.map((bucket) => {
-            const heightPct = maxCount > 0 ? (bucket.entryCount / maxCount) * 100 : 0
-            const minHeight = bucket.entryCount > 0 ? 8 : 2
-            const hasEntries = bucket.entryCount > 0
-            const isHovered = hoveredHour === bucket.hour
+        <div className="hourly-chart-body">
+          <div className="hourly-chart-y-axis" aria-hidden="true">
+            {yAxisLabels.map((label) => (
+              <span key={label} className="hourly-chart-y-axis-label">
+                {label}
+              </span>
+            ))}
+          </div>
 
-            return (
-              <div
-                key={bucket.hour}
-                className="hourly-chart-cell"
-                tabIndex={0}
-                aria-label={formatTooltip(bucket.hour, bucket.entryCount)}
-                onMouseEnter={() => setHoveredHour(bucket.hour)}
-                onMouseLeave={() => setHoveredHour(null)}
-                onFocus={() => setHoveredHour(bucket.hour)}
-                onBlur={() => setHoveredHour(null)}
-              >
+          <div className="hourly-chart-plot">
+            <div role="img" aria-label={ariaLabel} className="hourly-chart-grid hourly-chart-tracks">
+              {markersByHour.map((markers, hour) => (
                 <div
-                  className={`hourly-chart-bar ${hasEntries ? 'hourly-chart-bar-filled' : 'hourly-chart-bar-empty'}`}
-                  style={{
-                    height: `${heightPct}%`,
-                    minHeight,
-                    filter: isHovered && hasEntries ? 'brightness(1.1)' : undefined,
-                    boxShadow:
-                      isHovered && hasEntries ? '0 0 12px #05966955' : undefined,
-                  }}
-                />
-              </div>
-            )
-          })}
-        </div>
+                  key={hour}
+                  className="hourly-chart-hour"
+                  aria-label={`${formatHourLabel(hour)}: ${markers.length} ${markers.length === 1 ? 'meal' : 'meals'}`}
+                >
+                  {markers.map((marker) => {
+                    const offset =
+                      marker.slotTotal > 1
+                        ? (marker.slotIndex - (marker.slotTotal - 1) / 2) * DOT_OFFSET_PX
+                        : 0
+                    const isSelected = marker.entryId === selectedEntryId
 
-        <div className="hourly-chart-grid hourly-chart-axis" aria-hidden="true">
-          {buckets.map((bucket) => (
-            <span key={bucket.hour} className="hourly-chart-axis-label">
-              {formatAxisHourLabel(bucket.hour)}
-            </span>
-          ))}
+                    return (
+                      <button
+                        key={marker.entryId}
+                        type="button"
+                        className={`hourly-chart-dot${isSelected ? ' hourly-chart-dot-selected' : ''}`}
+                        style={{
+                          bottom: `${(marker.calories / axisMax) * 100}%`,
+                          left: `calc(50% + ${offset}px)`,
+                        }}
+                        aria-label={`${marker.label} meal logged, ${marker.calories} calories`}
+                        aria-pressed={isSelected}
+                        onClick={() =>
+                          setSelectedEntryId((current) =>
+                            current === marker.entryId ? null : marker.entryId,
+                          )
+                        }
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <div className="hourly-chart-grid hourly-chart-axis" aria-hidden="true">
+              {markersByHour.map((_, hour) => (
+                <span key={hour} className="hourly-chart-axis-label">
+                  {formatAxisHourLabel(hour)}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

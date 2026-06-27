@@ -8,6 +8,7 @@ import {
   routeZone,
   type AppRoute,
 } from '../lib/routing'
+import { fetchNewSharedCount, markSharedAsSeen } from '../lib/sharedNotifications'
 import MobileTabBar from './layout/MobileTabBar'
 
 interface LayoutProps {
@@ -25,6 +26,7 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
   const { user, signOut } = useAuth()
   const profileContext = useProfileOptional()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [newShareCount, setNewShareCount] = useState(0)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const activeNav = primaryNavRoute(activeRoute)
   const zone = routeZone(activeRoute)
@@ -35,6 +37,32 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
     (user?.user_metadata?.display_name as string | undefined) ??
     user?.email ??
     'Account'
+
+  useEffect(() => {
+    if (!user) {
+      setNewShareCount(0)
+      return
+    }
+
+    if (activeRoute === 'shared') {
+      markSharedAsSeen()
+      setNewShareCount(0)
+      return
+    }
+
+    let cancelled = false
+    void fetchNewSharedCount()
+      .then((count) => {
+        if (!cancelled) setNewShareCount(count)
+      })
+      .catch(() => {
+        if (!cancelled) setNewShareCount(0)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user, activeRoute])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -73,14 +101,18 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
                         : zoneTokens.dashboard.accent,
                 }}
               >
-                <i className="fa-solid fa-chart-line" aria-hidden="true" />
+                <i className="fa-solid fa-fire app-nav-logo-icon" aria-hidden="true" />
               </div>
               <span className="app-nav-title">Nutrition Tracker</span>
             </a>
             <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
               <button
                 type="button"
-                aria-label="Account menu"
+                aria-label={
+                  newShareCount > 0
+                    ? `Account menu, ${newShareCount} new shared items`
+                    : 'Account menu'
+                }
                 aria-expanded={menuOpen}
                 aria-haspopup="true"
                 onClick={() => setMenuOpen((open) => !open)}
@@ -95,9 +127,15 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  position: 'relative',
                 }}
               >
                 <i className="fa-solid fa-user" style={{ fontSize: 16 }} aria-hidden="true" />
+                {newShareCount > 0 && (
+                  <span className="account-menu-badge" aria-hidden="true">
+                    {newShareCount > 9 ? '9+' : newShareCount}
+                  </span>
+                )}
               </button>
               {menuOpen && (
                 <div
@@ -143,6 +181,44 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
                     }}
                   >
                     Profile
+                  </a>
+                  <a
+                    href={routeHref('shared')}
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      color: '#3f3f46',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span>Shared With Me</span>
+                    {newShareCount > 0 && (
+                      <span
+                        style={{
+                          minWidth: 18,
+                          height: 18,
+                          padding: '0 5px',
+                          borderRadius: 9999,
+                          background: '#ef4444',
+                          color: 'white',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {newShareCount > 9 ? '9+' : newShareCount}
+                      </span>
+                    )}
                   </a>
                   <button
                     type="button"

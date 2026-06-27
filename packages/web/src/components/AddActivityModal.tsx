@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  currentTimeInputValue,
+  formatTimeInputValue,
+  loggedAtFromDayAndTime,
   resolveLogWorkoutMetrics,
   validateActivity,
   type Activity,
-  type NewActivity,
+  type ActivityWrite,
   type WorkoutSummary,
 } from '@nutrition-tracker/shared'
 import { fetchWorkoutSummaries } from '../lib/workouts'
@@ -17,14 +20,21 @@ type AddMode = 'manual' | 'workout'
 
 interface AddActivityModalProps {
   activity?: Activity
-  onAdd: (activity: NewActivity) => Promise<void>
-  onLogWorkout?: (options: { workoutId: string; setsLogged: number }) => Promise<void>
+  logDate: string
+  timeZone: string
+  onAdd: (activity: ActivityWrite) => Promise<void>
+  onLogWorkout?: (options: {
+    workoutId: string
+    setsLogged: number
+    loggedAt?: string
+  }) => Promise<void>
   onClose: () => void
 }
 
 interface FormState {
   name: string
   activityType: string
+  logTime: string
   durationMinutes: string
   distanceKm: string
   averageHeartrate: string
@@ -32,20 +42,29 @@ interface FormState {
   calories: string
 }
 
-const EMPTY_FORM: FormState = {
-  name: '',
-  activityType: ACTIVITY_TYPES[0],
-  durationMinutes: '',
-  distanceKm: '',
-  averageHeartrate: '',
-  maxHeartrate: '',
-  calories: '',
+function initialLogTime(activity: Activity | undefined, timeZone: string): string {
+  if (activity?.loggedAt) return formatTimeInputValue(activity.loggedAt, timeZone)
+  return currentTimeInputValue(timeZone)
 }
 
-function formFromActivity(activity: Activity): FormState {
+function emptyForm(timeZone: string): FormState {
+  return {
+    name: '',
+    activityType: ACTIVITY_TYPES[0],
+    logTime: currentTimeInputValue(timeZone),
+    durationMinutes: '',
+    distanceKm: '',
+    averageHeartrate: '',
+    maxHeartrate: '',
+    calories: '',
+  }
+}
+
+function formFromActivity(activity: Activity, timeZone: string): FormState {
   return {
     name: activity.name,
     activityType: activity.activityType,
+    logTime: initialLogTime(activity, timeZone),
     durationMinutes: String(Math.round(activity.movingTimeSeconds / 60)),
     distanceKm: activity.distanceMeters !== null ? String(activity.distanceMeters / 1000) : '',
     averageHeartrate: activity.averageHeartrate !== null ? String(activity.averageHeartrate) : '',
@@ -68,6 +87,8 @@ function parseOptionalFloat(value: string): number | null {
 
 export default function AddActivityModal({
   activity,
+  logDate,
+  timeZone,
   onAdd,
   onLogWorkout,
   onClose,
@@ -77,8 +98,9 @@ export default function AddActivityModal({
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([])
   const [selectedWorkoutId, setSelectedWorkoutId] = useState('')
   const [workoutSetsLogged, setWorkoutSetsLogged] = useState('1')
+  const [workoutLogTime, setWorkoutLogTime] = useState(() => currentTimeInputValue(timeZone))
   const [form, setForm] = useState<FormState>(() =>
-    activity ? formFromActivity(activity) : EMPTY_FORM,
+    activity ? formFromActivity(activity, timeZone) : emptyForm(timeZone),
   )
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -129,7 +151,8 @@ export default function AddActivityModal({
   }
 
   const close = () => {
-    setForm(activity ? formFromActivity(activity) : EMPTY_FORM)
+    setForm(activity ? formFromActivity(activity, timeZone) : emptyForm(timeZone))
+    setWorkoutLogTime(currentTimeInputValue(timeZone))
     setError(null)
     onClose()
   }
@@ -155,6 +178,12 @@ export default function AddActivityModal({
       return
     }
 
+    const loggedAt = loggedAtFromDayAndTime(logDate, form.logTime, timeZone)
+    if (!loggedAt.ok) {
+      setError(loggedAt.error)
+      return
+    }
+
     setAdding(true)
     setError(null)
     try {
@@ -166,6 +195,7 @@ export default function AddActivityModal({
         averageHeartrate: validated.value.averageHeartrate,
         maxHeartrate: validated.value.maxHeartrate,
         calories: validated.value.calories,
+        loggedAt: loggedAt.value,
       })
       close()
     } catch (err) {
@@ -189,12 +219,19 @@ export default function AddActivityModal({
       return
     }
 
+    const loggedAt = loggedAtFromDayAndTime(logDate, workoutLogTime, timeZone)
+    if (!loggedAt.ok) {
+      setError(loggedAt.error)
+      return
+    }
+
     setAdding(true)
     setError(null)
     try {
       await onLogWorkout({
         workoutId: selectedWorkout.id,
         setsLogged,
+        loggedAt: loggedAt.value,
       })
       close()
     } catch (err) {
@@ -219,7 +256,7 @@ export default function AddActivityModal({
         </h3>
         <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
           {isEdit
-            ? 'Update this activity output.'
+            ? 'Update this activity, including when you completed it.'
             : "Record a workout or activity for today's outputs."}
         </p>
 
@@ -285,6 +322,18 @@ export default function AddActivityModal({
                   ))
                 )}
               </select>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="activity-workout-log-time" style={labelBase}>
+                Log time
+              </label>
+              <input
+                id="activity-workout-log-time"
+                type="time"
+                value={workoutLogTime}
+                onChange={(e) => setWorkoutLogTime(e.target.value)}
+                style={inputBase}
+              />
             </div>
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="activity-workout-sets" style={labelBase}>
@@ -398,6 +447,22 @@ export default function AddActivityModal({
               </option>
             ))}
           </select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label htmlFor="activity-log-time" style={labelBase}>
+            Log time
+          </label>
+          <input
+            id="activity-log-time"
+            type="time"
+            value={form.logTime}
+            onChange={(e) => update('logTime', e.target.value)}
+            style={inputBase}
+          />
+          <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+            When you completed this activity.
+          </p>
         </div>
 
         <div className="modal-form-grid" style={{ marginBottom: 16 }}>

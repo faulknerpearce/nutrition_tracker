@@ -209,6 +209,7 @@ export async function logWorkout(options: LogWorkoutInput): Promise<Activity> {
       calories: metrics.calories,
       workout_id: workout.id,
       workout_sets_logged: setsLogged,
+      ...(options.loggedAt ? { created_at: options.loggedAt } : {}),
     })
     .select()
     .single()

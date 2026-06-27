@@ -1,11 +1,11 @@
 import { formatDayLabel, shiftISODate, sumTotals, todayISO } from '@nutrition-tracker/shared'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNutritionGoals, useProfile } from '../context/useProfile'
 import AddEntryModal from '../components/AddEntryModal'
 import BarcodeScannerModal from '../components/BarcodeScannerModal'
 import CollapsiblePanel from '../components/layout/CollapsiblePanel'
 import DayNavigator from '../components/layout/DayNavigator'
-import ZoneButton from '../components/layout/ZoneButton'
+
 import { PageError, PageLoading } from '../components/layout/PageState'
 import FoodLogEntryStats from '../components/FoodLogEntryStats'
 import FoodLogSection from '../components/FoodLogSection'
@@ -20,7 +20,7 @@ import {
   updateEntry,
   type DaySummary,
   type FoodEntry,
-  type NewFoodEntry,
+  type FoodEntryWrite,
 } from '../lib/entries'
 import { logRecipe, saveRecipe } from '../lib/recipes'
 import { buildMetricConfigs } from '../lib/metrics'
@@ -35,7 +35,15 @@ function emptyDaySummary(date: string): DaySummary {
   return { date, entries: [], totals: sumTotals([]) }
 }
 
-export default function InputsPage() {
+interface InputsPageProps {
+  onOpenAddEntryReady?: (openAddEntry: () => void) => void
+  onOpenBarcodeScannerReady?: (openBarcodeScanner: () => void) => void
+}
+
+export default function InputsPage({
+  onOpenAddEntryReady,
+  onOpenBarcodeScannerReady,
+}: InputsPageProps) {
   const nutritionGoals = useNutritionGoals()
   const { profile } = useProfile()
   const [days, setDays] = useState<DaySummary[]>([])
@@ -44,7 +52,7 @@ export default function InputsPage() {
   const [selectedDate, setSelectedDate] = useState(todayISO())
   const [showAddForm, setShowAddForm] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
-  const [prefillEntry, setPrefillEntry] = useState<NewFoodEntry | null>(null)
+  const [prefillEntry, setPrefillEntry] = useState<FoodEntryWrite | null>(null)
 
   const today = todayISO()
   const isToday = selectedDate === today
@@ -92,20 +100,28 @@ export default function InputsPage() {
     }
   }, [loading, selectedDate, days])
 
-  function openAddEntry() {
+  const openAddEntry = useCallback(() => {
     setSelectedDate(today)
     setPrefillEntry(null)
     setShowAddForm(true)
-  }
+  }, [today])
 
-  function openBarcodeScanner() {
+  const openBarcodeScanner = useCallback(() => {
     setSelectedDate(today)
     setShowScanner(true)
-  }
+  }, [today])
+
+  useEffect(() => {
+    onOpenAddEntryReady?.(openAddEntry)
+  }, [onOpenAddEntryReady, openAddEntry])
+
+  useEffect(() => {
+    onOpenBarcodeScannerReady?.(openBarcodeScanner)
+  }, [onOpenBarcodeScannerReady, openBarcodeScanner])
 
   async function persistAdd(
-    input: NewFoodEntry,
-    options?: { saveAsRecipe?: boolean; perServing?: NewFoodEntry },
+    input: FoodEntryWrite,
+    options?: { saveAsRecipe?: boolean; perServing?: FoodEntryWrite },
   ) {
     const entry = await addEntry(input)
     if (options?.saveAsRecipe) {
@@ -142,8 +158,12 @@ export default function InputsPage() {
     setSelectedDate(today)
   }
 
-  async function persistLogRecipe(recipeId: string, servings: number) {
-    const entry = await logRecipe({ recipeId, servings })
+  async function persistLogRecipe(
+    recipeId: string,
+    servings: number,
+    options?: { loggedAt?: string },
+  ) {
+    const entry = await logRecipe({ recipeId, servings, loggedAt: options?.loggedAt })
     setDays((prev) => {
       const existing = prev.find((day) => day.date === today)
       if (existing) {
@@ -154,12 +174,15 @@ export default function InputsPage() {
     setSelectedDate(today)
   }
 
-  async function persistUpdate(id: string, input: NewFoodEntry) {
+  async function persistUpdate(id: string, input: FoodEntryWrite) {
     const updated = await updateEntry(id, input)
     setDays((prev) =>
       prev.map((day) => {
-        const entries = day.entries.map((entry) => (entry.id === id ? updated : entry))
-        return entries === day.entries ? day : { ...day, entries, totals: sumTotals(entries) }
+        if (!day.entries.some((entry) => entry.id === id)) return day
+        const entries = day.entries
+          .map((entry) => (entry.id === id ? updated : entry))
+          .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt))
+        return { ...day, entries, totals: sumTotals(entries) }
       }),
     )
   }
@@ -183,20 +206,11 @@ export default function InputsPage() {
     <>
       <DayNavigator
         date={selectedDate}
-        itemCount={activeDay.entries.length}
+        compact
         canGoForward={selectedDate < today}
         onPrevious={() => setSelectedDate((date) => shiftISODate(date, -1))}
         onNext={() => setSelectedDate((date) => shiftISODate(date, 1))}
       />
-
-      <div className="inputs-quick-actions">
-        <ZoneButton variant="primary" onClick={openAddEntry}>
-          <i className="fa-solid fa-plus" aria-hidden="true" /> Add Entry
-        </ZoneButton>
-        <ZoneButton variant="secondary" onClick={openBarcodeScanner}>
-          <i className="fa-solid fa-barcode" aria-hidden="true" /> Scan Barcode
-        </ZoneButton>
-      </div>
 
       <div className={`inputs-day-content${isToday ? ' inputs-day-content-today' : ''}`}>
         <CollapsiblePanel
@@ -219,15 +233,19 @@ export default function InputsPage() {
         </CollapsiblePanel>
 
         <CollapsiblePanel
-          title={`${formatDayLabel(selectedDate)} Food Log`}
-          subtitle={
-            isToday
-              ? 'Add, edit, or remove entries for today'
-              : 'Edit or remove entries from this day'
-          }
+          title="Food Log"
+          subtitle={(() => {
+            const count = activeDay.entries.length
+            const countLabel = `${count} ${count === 1 ? 'entry' : 'entries'}`
+            return isToday
+              ? `${countLabel} · Add, edit, or remove entries for today`
+              : `${countLabel} · Edit or remove entries from this day`
+          })()}
         >
           <FoodLogSection
             entries={activeDay.entries}
+            logDate={selectedDate}
+            timeZone={profile.timeZone}
             onAdd={isToday ? persistAdd : undefined}
             onLogRecipe={isToday ? persistLogRecipe : undefined}
             onEdit={persistUpdate}
@@ -252,6 +270,8 @@ export default function InputsPage() {
       {showAddForm && (
         <AddEntryModal
           prefill={prefillEntry ?? undefined}
+          logDate={today}
+          timeZone={profile.timeZone}
           onAdd={persistAdd}
           onLogRecipe={persistLogRecipe}
           onClose={() => {

@@ -44,8 +44,8 @@ export function buildActivityMetricConfigs(
       label: 'Distance',
       value: formatDistance(totals.distanceMeters > 0 ? totals.distanceMeters : null),
       detail: 'total distance covered',
-      color: '#2563eb',
-      iconBg: '#dbeafe',
+      color: '#0d9488',
+      iconBg: '#ccfbf1',
       iconClass: 'fa-route',
     },
     {

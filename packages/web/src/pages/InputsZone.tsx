@@ -14,8 +14,16 @@ interface InputsZoneProps {
 export default function InputsZone({ route }: InputsZoneProps) {
   const isRecipes = route === 'inputs/recipes'
   const openCreateRecipeRef = useRef<(() => void) | null>(null)
+  const openAddEntryRef = useRef<(() => void) | null>(null)
+  const openBarcodeScannerRef = useRef<(() => void) | null>(null)
   const handleOpenCreateReady = useCallback((openCreate: () => void) => {
     openCreateRecipeRef.current = openCreate
+  }, [])
+  const handleOpenAddEntryReady = useCallback((openAddEntry: () => void) => {
+    openAddEntryRef.current = openAddEntry
+  }, [])
+  const handleOpenBarcodeScannerReady = useCallback((openBarcodeScanner: () => void) => {
+    openBarcodeScannerRef.current = openBarcodeScanner
   }, [])
 
   return (
@@ -33,7 +41,16 @@ export default function InputsZone({ route }: InputsZoneProps) {
             <ZoneButton variant="primary" onClick={() => openCreateRecipeRef.current?.()}>
               <i className="fa-solid fa-plus" aria-hidden="true" /> New Recipe
             </ZoneButton>
-          ) : undefined
+          ) : (
+            <>
+              <ZoneButton variant="secondary" onClick={() => openBarcodeScannerRef.current?.()}>
+                <i className="fa-solid fa-barcode" aria-hidden="true" /> Scan Barcode
+              </ZoneButton>
+              <ZoneButton variant="primary" onClick={() => openAddEntryRef.current?.()}>
+                <i className="fa-solid fa-plus" aria-hidden="true" /> Add Entry
+              </ZoneButton>
+            </>
+          )
         }
       />
       <ZoneSubNav
@@ -46,7 +63,10 @@ export default function InputsZone({ route }: InputsZoneProps) {
       {isRecipes ? (
         <RecipesPage onOpenCreateReady={handleOpenCreateReady} />
       ) : (
-        <InputsPage />
+        <InputsPage
+          onOpenAddEntryReady={handleOpenAddEntryReady}
+          onOpenBarcodeScannerReady={handleOpenBarcodeScannerReady}
+        />
       )}
     </PageShell>
   )

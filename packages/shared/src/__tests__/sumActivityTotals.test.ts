@@ -6,6 +6,7 @@ function activity(partial: Partial<Activity> & Pick<Activity, 'id' | 'name'>): A
   return {
     activityType: 'Run',
     activityDate: '2026-06-25',
+    loggedAt: '2026-06-25T12:00:00Z',
     distanceMeters: null,
     movingTimeSeconds: 0,
     averageHeartrate: null,

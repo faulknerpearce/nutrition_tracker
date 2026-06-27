@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ShareUserResult } from '@nutrition-tracker/shared'
 import {
+  fetchActivitySharesForResource,
+  fetchEntrySharesForResource,
   fetchRecipeSharesForResource,
   fetchWorkoutSharesForResource,
   findUsersForShare,
+  revokeActivityShare,
+  revokeEntryShare,
   revokeRecipeShare,
   revokeWorkoutShare,
+  shareActivity,
+  shareEntry,
   shareRecipe,
   shareWorkout,
 } from '../lib/sharing'
@@ -13,7 +19,27 @@ import { focusIfDesktop } from '../lib/device'
 import { inputBase, labelBase, primaryButton } from '../lib/styles'
 import Modal from './Modal'
 
-type ShareResourceType = 'recipe' | 'workout'
+type ShareResourceType = 'recipe' | 'workout' | 'entry' | 'activity'
+
+const SHARE_TITLES: Record<ShareResourceType, string> = {
+  recipe: 'Share Recipe',
+  workout: 'Share Workout',
+  entry: 'Share Entry',
+  activity: 'Share Activity',
+}
+
+async function fetchSharesForResource(resourceType: ShareResourceType, resourceId: string) {
+  switch (resourceType) {
+    case 'recipe':
+      return fetchRecipeSharesForResource(resourceId)
+    case 'workout':
+      return fetchWorkoutSharesForResource(resourceId)
+    case 'entry':
+      return fetchEntrySharesForResource(resourceId)
+    case 'activity':
+      return fetchActivitySharesForResource(resourceId)
+  }
+}
 
 interface ShareModalProps {
   resourceType: ShareResourceType
@@ -55,10 +81,7 @@ export default function ShareModal({
 
   const loadExistingShares = async (forKey: string) => {
     try {
-      const shares =
-        resourceType === 'recipe'
-          ? await fetchRecipeSharesForResource(resourceId)
-          : await fetchWorkoutSharesForResource(resourceId)
+      const shares = await fetchSharesForResource(resourceType, resourceId)
 
       setExistingShares(
         shares.map((share) => ({
@@ -77,10 +100,7 @@ export default function ShareModal({
 
     void (async () => {
       try {
-        const shares =
-          resourceType === 'recipe'
-            ? await fetchRecipeSharesForResource(resourceId)
-            : await fetchWorkoutSharesForResource(resourceId)
+        const shares = await fetchSharesForResource(resourceType, resourceId)
 
         if (cancelled) return
 
@@ -130,8 +150,12 @@ export default function ShareModal({
     try {
       if (resourceType === 'recipe') {
         await shareRecipe(resourceId, user.id, user.displayName)
-      } else {
+      } else if (resourceType === 'workout') {
         await shareWorkout(resourceId, user.id, user.displayName)
+      } else if (resourceType === 'entry') {
+        await shareEntry(resourceId, user.id, user.displayName)
+      } else {
+        await shareActivity(resourceId, user.id, user.displayName)
       }
       setSuccess(`Shared with ${user.displayName}`)
       setQuery('')
@@ -150,8 +174,12 @@ export default function ShareModal({
     try {
       if (resourceType === 'recipe') {
         await revokeRecipeShare(shareId)
-      } else {
+      } else if (resourceType === 'workout') {
         await revokeWorkoutShare(shareId)
+      } else if (resourceType === 'entry') {
+        await revokeEntryShare(shareId)
+      } else {
+        await revokeActivityShare(shareId)
       }
       await loadExistingShares(loadKey)
     } catch (err) {
@@ -172,7 +200,7 @@ export default function ShareModal({
           margin: '0 0 8px 0',
         }}
       >
-        Share {resourceType}
+        {SHARE_TITLES[resourceType]}
       </h3>
       <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 20px 0' }}>{resourceName}</p>
 

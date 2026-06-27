@@ -101,16 +101,115 @@ export function parseLogDate(
   return { ok: true, value: raw }
 }
 
-/** Local hour (0–23) for an ISO timestamp in an IANA timezone. */
-export function hourInTimeZone(iso: string, timeZone: string): number {
+function timeZoneParts(iso: string, timeZone: string, includeMinute: boolean) {
   const tz = isValidTimeZone(timeZone) ? timeZone : DEFAULT_TIMEZONE
-  const parts = new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('en-US', {
     timeZone: tz,
     hour: 'numeric',
+    minute: includeMinute ? '2-digit' : undefined,
     hourCycle: 'h23',
   }).formatToParts(new Date(iso))
-  const hour = parts.find((part) => part.type === 'hour')?.value
+}
+
+/** Local hour (0–23) for an ISO timestamp in an IANA timezone. */
+export function hourInTimeZone(iso: string, timeZone: string): number {
+  const hour = timeZoneParts(iso, timeZone, false).find((part) => part.type === 'hour')?.value
   return hour ? parseInt(hour, 10) : 0
+}
+
+/** Local minute (0–59) for an ISO timestamp in an IANA timezone. */
+export function minuteInTimeZone(iso: string, timeZone: string): number {
+  const minute = timeZoneParts(iso, timeZone, true).find((part) => part.type === 'minute')?.value
+  return minute ? parseInt(minute, 10) : 0
+}
+
+/** Calendar date (YYYY-MM-DD) for an ISO timestamp in an IANA timezone. */
+export function dayInTimeZone(iso: string, timeZone: string): string {
+  const tz = isValidTimeZone(timeZone) ? timeZone : DEFAULT_TIMEZONE
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(iso))
+  const y = parts.find((part) => part.type === 'year')?.value
+  const m = parts.find((part) => part.type === 'month')?.value
+  const d = parts.find((part) => part.type === 'day')?.value
+  if (!y || !m || !d) return todayISO(new Date(iso))
+  return `${y}-${m}-${d}`
+}
+
+/** Value for an HTML time input from an ISO timestamp in an IANA timezone. */
+export function formatTimeInputValue(iso: string, timeZone: string): string {
+  const hour = hourInTimeZone(iso, timeZone)
+  const minute = minuteInTimeZone(iso, timeZone)
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+/** Current local time as HH:MM for an HTML time input. */
+export function currentTimeInputValue(timeZone: string, now: Date = new Date()): string {
+  return formatTimeInputValue(now.toISOString(), timeZone)
+}
+
+/** Build an ISO timestamp for a calendar day and local time in an IANA timezone. */
+export function loggedAtFromDayAndTime(
+  entryDate: string,
+  timeValue: string,
+  timeZone: string,
+): ValidationResult<string> {
+  const trimmed = timeValue.trim()
+  const match = /^(\d{2}):(\d{2})$/.exec(trimmed)
+  if (!match) {
+    return { ok: false, error: 'time must be HH:MM' }
+  }
+
+  const hour = Number.parseInt(match[1], 10)
+  const minute = Number.parseInt(match[2], 10)
+  if (hour > 23 || minute > 59) {
+    return { ok: false, error: 'time is not valid' }
+  }
+
+  const [y, m, d] = entryDate.split('-').map(Number)
+  let utcMs = Date.UTC(y, m - 1, d, hour, minute, 0, 0)
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const iso = new Date(utcMs).toISOString()
+    const zonedDay = dayInTimeZone(iso, timeZone)
+    const zonedHour = hourInTimeZone(iso, timeZone)
+    const zonedMinute = minuteInTimeZone(iso, timeZone)
+
+    if (zonedDay === entryDate && zonedHour === hour && zonedMinute === minute) {
+      return { ok: true, value: iso }
+    }
+
+    const dayOffset = zonedDay < entryDate ? 1 : zonedDay > entryDate ? -1 : 0
+    const minuteOffset =
+      hour * 60 + minute - (zonedHour * 60 + zonedMinute) + dayOffset * 24 * 60
+    utcMs += minuteOffset * 60 * 1000
+  }
+
+  return { ok: false, error: 'could not resolve log time in your timezone' }
+}
+
+export function parseLoggedAt(value: unknown): ValidationResult<string> {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return { ok: false, error: 'loggedAt must be an ISO timestamp' }
+  }
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return { ok: false, error: 'loggedAt must be an ISO timestamp' }
+  }
+  return { ok: true, value: parsed.toISOString() }
+}
+
+/** Local log time for charting, e.g. "8:15 AM". */
+export function formatLogTime(iso: string, timeZone: string): string {
+  const tz = isValidTimeZone(timeZone) ? timeZone : DEFAULT_TIMEZONE
+  return new Date(iso).toLocaleTimeString('en-US', {
+    timeZone: tz,
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 export function formatDayLabel(iso: string, now: Date = new Date()): string {
@@ -121,6 +220,23 @@ export function formatDayLabel(iso: string, now: Date = new Date()): string {
   return parseISODate(iso).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
+    day: 'numeric',
+  })
+}
+
+/** Headline weekday label: Today, Yesterday, or weekday name only. */
+export function formatWeekdayHeadline(iso: string, now: Date = new Date()): string {
+  const today = todayISO(now)
+  const yesterday = offsetDateISO(1, now)
+  if (iso === today) return 'Today'
+  if (iso === yesterday) return 'Yesterday'
+  return parseISODate(iso).toLocaleDateString('en-US', { weekday: 'long' })
+}
+
+/** Calendar date without year, e.g. "June 27". */
+export function formatMonthDayLabel(iso: string): string {
+  return parseISODate(iso).toLocaleDateString('en-US', {
+    month: 'long',
     day: 'numeric',
   })
 }

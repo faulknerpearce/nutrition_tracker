@@ -1,5 +1,8 @@
 export type ZoneId = 'dashboard' | 'inputs' | 'outputs' | 'profile'
 
+/** Brand blue — dashboard hero and center nav button only. */
+export const BRAND_BLUE = '#2b68e8'
+
 export interface ZoneTokens {
   id: ZoneId
   accent: string
@@ -14,13 +17,13 @@ export interface ZoneTokens {
 export const zoneTokens: Record<ZoneId, ZoneTokens> = {
   dashboard: {
     id: 'dashboard',
-    accent: '#27272a',
-    accentMuted: '#f4f4f5',
+    accent: BRAND_BLUE,
+    accentMuted: '#dbeafe',
     accentText: '#ffffff',
-    bg: '#f8f8f7',
+    bg: '#f0f4ff',
     cardBg: '#ffffff',
-    cardBorder: '#e4e4e7',
-    eyebrow: '#52525b',
+    cardBorder: '#bfdbfe',
+    eyebrow: '#1e40af',
   },
   inputs: {
     id: 'inputs',
@@ -34,13 +37,13 @@ export const zoneTokens: Record<ZoneId, ZoneTokens> = {
   },
   outputs: {
     id: 'outputs',
-    accent: '#2563eb',
-    accentMuted: '#dbeafe',
+    accent: '#0d9488',
+    accentMuted: '#ccfbf1',
     accentText: '#ffffff',
-    bg: '#f5f8ff',
+    bg: '#f0fdfa',
     cardBg: '#ffffff',
-    cardBorder: '#bfdbfe',
-    eyebrow: '#1d4ed8',
+    cardBorder: '#99f6e4',
+    eyebrow: '#0f766e',
   },
   profile: {
     id: 'profile',

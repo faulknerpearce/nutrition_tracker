@@ -1,19 +1,13 @@
-import {
-  formatDayLabel,
-  formatDistance,
-  formatDuration,
-  shiftISODate,
-  sumActivityTotals,
-  todayISO,
-} from '@nutrition-tracker/shared'
-import { useEffect, useMemo, useState } from 'react'
+import { formatDayLabel, shiftISODate, sumActivityTotals, todayISO } from '@nutrition-tracker/shared'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddActivityModal from '../components/AddActivityModal'
 import ActivityLogSection from '../components/ActivityLogSection'
 import ActivityMetricCard from '../components/ActivityMetricCard'
 import CollapsiblePanel from '../components/layout/CollapsiblePanel'
 import DayNavigator from '../components/layout/DayNavigator'
-import ZoneButton from '../components/layout/ZoneButton'
+
 import { PageError, PageLoading } from '../components/layout/PageState'
+import { useProfile } from '../context/useProfile'
 import { buildActivityMetricConfigs } from '../lib/activityMetrics'
 import {
   addActivity,
@@ -23,7 +17,7 @@ import {
   updateActivity,
   type Activity,
   type ActivityDaySummary,
-  type NewActivity,
+  type ActivityWrite,
 } from '../lib/activities'
 import { logWorkout } from '../lib/workouts'
 
@@ -41,7 +35,12 @@ function emptyDaySummary(date: string): ActivityDaySummary {
   return { date, activities: [], totals: sumActivityTotals([]) }
 }
 
-export default function OutputsPage() {
+interface OutputsPageProps {
+  onOpenLogActivityReady?: (openLogActivity: () => void) => void
+}
+
+export default function OutputsPage({ onOpenLogActivityReady }: OutputsPageProps) {
+  const { profile } = useProfile()
   const [days, setDays] = useState<ActivityDaySummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -55,19 +54,6 @@ export default function OutputsPage() {
     () => days.find((day) => day.date === selectedDate) ?? emptyDaySummary(selectedDate),
     [days, selectedDate],
   )
-
-  const dayMeta = useMemo(() => {
-    const count = activeDay.activities.length
-    const parts = [
-      `${count} ${count === 1 ? 'activity' : 'activities'}`,
-      formatDuration(activeDay.totals.movingTimeSeconds),
-      formatDistance(activeDay.totals.distanceMeters || null),
-    ]
-    if (activeDay.totals.calories > 0) {
-      parts.push(`${activeDay.totals.calories} kcal burned`)
-    }
-    return parts.join(' • ')
-  }, [activeDay])
 
   useEffect(() => {
     fetchActivityDaySummaries()
@@ -108,12 +94,16 @@ export default function OutputsPage() {
     }
   }, [loading, selectedDate, days])
 
-  function openLogActivity() {
+  const openLogActivity = useCallback(() => {
     setSelectedDate(today)
     setShowAddForm(true)
-  }
+  }, [today])
 
-  async function persistAdd(input: NewActivity) {
+  useEffect(() => {
+    onOpenLogActivityReady?.(openLogActivity)
+  }, [onOpenLogActivityReady, openLogActivity])
+
+  async function persistAdd(input: ActivityWrite) {
     const activity = await addActivity(input)
     setDays((prev) => {
       const existing = prev.find((day) => day.date === today)
@@ -128,7 +118,11 @@ export default function OutputsPage() {
     setSelectedDate(today)
   }
 
-  async function persistLogWorkout(options: { workoutId: string; setsLogged: number }) {
+  async function persistLogWorkout(options: {
+    workoutId: string
+    setsLogged: number
+    loggedAt?: string
+  }) {
     const activity = await logWorkout(options)
     setDays((prev) => {
       const existing = prev.find((day) => day.date === today)
@@ -143,16 +137,15 @@ export default function OutputsPage() {
     setSelectedDate(today)
   }
 
-  async function persistUpdate(id: string, input: NewActivity) {
+  async function persistUpdate(id: string, input: ActivityWrite) {
     const updated = await updateActivity(id, input)
     setDays((prev) =>
       prev.map((day) => {
-        const activities = day.activities.map((activity) =>
-          activity.id === id ? updated : activity,
-        )
-        return activities === day.activities
-          ? day
-          : { ...day, activities, totals: sumActivityTotals(activities) }
+        if (!day.activities.some((activity) => activity.id === id)) return day
+        const activities = day.activities
+          .map((activity) => (activity.id === id ? updated : activity))
+          .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt))
+        return { ...day, activities, totals: sumActivityTotals(activities) }
       }),
     )
   }
@@ -176,17 +169,11 @@ export default function OutputsPage() {
     <>
       <DayNavigator
         date={selectedDate}
-        meta={dayMeta}
+        compact
         canGoForward={selectedDate < today}
         onPrevious={() => setSelectedDate((date) => shiftISODate(date, -1))}
         onNext={() => setSelectedDate((date) => shiftISODate(date, 1))}
       />
-
-      <div className="inputs-quick-actions">
-        <ZoneButton variant="primary" onClick={openLogActivity}>
-          <i className="fa-solid fa-plus" aria-hidden="true" /> Log Activity
-        </ZoneButton>
-      </div>
 
       <div className={`inputs-day-content${isToday ? ' inputs-day-content-today' : ''}`}>
         <CollapsiblePanel
@@ -201,15 +188,19 @@ export default function OutputsPage() {
         </CollapsiblePanel>
 
         <CollapsiblePanel
-          title={`${formatDayLabel(selectedDate)} Activities`}
-          subtitle={
-            isToday
-              ? 'Log, edit, or remove activities for today'
-              : 'Edit or remove activities from this day'
-          }
+          title="Activities"
+          subtitle={(() => {
+            const count = activeDay.activities.length
+            const countLabel = `${count} ${count === 1 ? 'activity' : 'activities'}`
+            return isToday
+              ? `${countLabel} · Log, edit, or remove activities for today`
+              : `${countLabel} · Edit or remove activities from this day`
+          })()}
         >
           <ActivityLogSection
             activities={activeDay.activities}
+            logDate={selectedDate}
+            timeZone={profile.timeZone}
             onAdd={isToday ? persistAdd : undefined}
             onLogWorkout={isToday ? persistLogWorkout : undefined}
             onEdit={persistUpdate}
@@ -222,6 +213,8 @@ export default function OutputsPage() {
 
       {showAddForm && (
         <AddActivityModal
+          logDate={today}
+          timeZone={profile.timeZone}
           onAdd={persistAdd}
           onLogWorkout={async (options) => {
             await persistLogWorkout(options)

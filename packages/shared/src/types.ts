@@ -21,7 +21,8 @@ export interface FoodEntry {
 }
 
 export type NewFoodEntry = Omit<FoodEntry, 'id' | 'loggedAt'>
-export type UpdateFoodEntry = Partial<NewFoodEntry>
+export type FoodEntryWrite = NewFoodEntry & { loggedAt?: string }
+export type UpdateFoodEntry = Partial<NewFoodEntry> & { loggedAt?: string }
 
 export type Totals = {
   calories: number
@@ -49,6 +50,7 @@ export interface Activity {
   name: string
   activityType: string
   activityDate: string
+  loggedAt: string
   distanceMeters: number | null
   movingTimeSeconds: number
   averageHeartrate: number | null
@@ -61,9 +63,10 @@ export interface Activity {
 
 export type NewActivity = Omit<
   Activity,
-  'id' | 'activityDate' | 'workoutId' | 'workoutSetsLogged' | 'exercises'
+  'id' | 'activityDate' | 'loggedAt' | 'workoutId' | 'workoutSetsLogged' | 'exercises'
 >
-export type UpdateActivity = Partial<NewActivity>
+export type ActivityWrite = NewActivity & { loggedAt?: string }
+export type UpdateActivity = Partial<NewActivity> & { loggedAt?: string }
 
 export type ActivityTotals = {
   calories: number

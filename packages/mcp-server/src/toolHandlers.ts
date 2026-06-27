@@ -10,6 +10,7 @@ import {
   mapRow,
   parseActivityInput,
   parseEntryInput,
+  parseLoggedAt,
   parseNutritionGoals,
   sumActivityTotals,
   sumTotals,
@@ -72,9 +73,13 @@ export async function addFoodEntryForDate(
   if (!parsed.ok) throw new Error(parsed.error)
 
   const userId = await requireUserId(supabase)
+  const loggedAt = args.loggedAt === undefined ? undefined : parseLoggedAt(args.loggedAt)
+  if (loggedAt && !loggedAt.ok) throw new Error(loggedAt.error)
+
   const entry = {
     ...buildInsertPayload(parsed.value, crypto.randomUUID(), userId),
     entry_date: date,
+    ...(loggedAt?.ok ? { created_at: loggedAt.value } : {}),
   }
   const { data, error } = await supabase.from('food_entries').insert(entry).select().single()
   if (error) throw error
@@ -102,6 +107,11 @@ export async function updateFoodEntry(supabase: NutritionSupabase, args: ToolArg
   if (!parsed.ok) throw new Error(parsed.error)
   const updates = buildUpdatePayload(parsed.value) as FoodUpdate
   if (typeof args.date === 'string') updates.entry_date = args.date
+  if (args.loggedAt !== undefined) {
+    const loggedAt = parseLoggedAt(args.loggedAt)
+    if (!loggedAt.ok) throw new Error(loggedAt.error)
+    updates.created_at = loggedAt.value
+  }
 
   const { data, error } = await supabase
     .from('food_entries')
@@ -178,7 +188,13 @@ export async function addActivityForDate(
   if (!parsed.ok) throw new Error(parsed.error)
 
   const userId = await requireUserId(supabase)
-  const activity = buildActivityInsertPayload(parsed.value, crypto.randomUUID(), userId, date)
+  const loggedAt = args.loggedAt === undefined ? undefined : parseLoggedAt(args.loggedAt)
+  if (loggedAt && !loggedAt.ok) throw new Error(loggedAt.error)
+
+  const activity = {
+    ...buildActivityInsertPayload(parsed.value, crypto.randomUUID(), userId, date),
+    ...(loggedAt?.ok ? { created_at: loggedAt.value } : {}),
+  }
   const { data, error } = await supabase.from('activities').insert(activity).select().single()
   if (error) throw error
   return mapActivityRow(data)
@@ -219,6 +235,11 @@ export async function updateActivity(supabase: NutritionSupabase, args: ToolArgs
   if (!parsed.ok) throw new Error(parsed.error)
   const updates = buildActivityUpdatePayload(parsed.value) as ActivityUpdate
   if (typeof args.date === 'string') updates.activity_date = args.date
+  if (args.loggedAt !== undefined) {
+    const loggedAt = parseLoggedAt(args.loggedAt)
+    if (!loggedAt.ok) throw new Error(loggedAt.error)
+    updates.created_at = loggedAt.value
+  }
 
   const { data, error } = await supabase
     .from('activities')

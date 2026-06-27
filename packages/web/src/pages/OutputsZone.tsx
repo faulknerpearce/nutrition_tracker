@@ -14,8 +14,12 @@ interface OutputsZoneProps {
 export default function OutputsZone({ route }: OutputsZoneProps) {
   const isWorkouts = route === 'outputs/workouts'
   const openCreateWorkoutRef = useRef<(() => void) | null>(null)
+  const openLogActivityRef = useRef<(() => void) | null>(null)
   const handleOpenCreateReady = useCallback((openCreate: () => void) => {
     openCreateWorkoutRef.current = openCreate
+  }, [])
+  const handleOpenLogActivityReady = useCallback((openLogActivity: () => void) => {
+    openLogActivityRef.current = openLogActivity
   }, [])
 
   return (
@@ -33,7 +37,11 @@ export default function OutputsZone({ route }: OutputsZoneProps) {
             <ZoneButton variant="primary" onClick={() => openCreateWorkoutRef.current?.()}>
               <i className="fa-solid fa-plus" aria-hidden="true" /> New Workout
             </ZoneButton>
-          ) : undefined
+          ) : (
+            <ZoneButton variant="primary" onClick={() => openLogActivityRef.current?.()}>
+              <i className="fa-solid fa-plus" aria-hidden="true" /> Log Activity
+            </ZoneButton>
+          )
         }
       />
       <ZoneSubNav
@@ -46,7 +54,7 @@ export default function OutputsZone({ route }: OutputsZoneProps) {
       {isWorkouts ? (
         <WorkoutsPage onOpenCreateReady={handleOpenCreateReady} />
       ) : (
-        <OutputsPage />
+        <OutputsPage onOpenLogActivityReady={handleOpenLogActivityReady} />
       )}
     </PageShell>
   )

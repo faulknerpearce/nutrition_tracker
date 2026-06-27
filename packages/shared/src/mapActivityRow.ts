@@ -6,6 +6,7 @@ export function mapActivityRow(row: ActivityRow): Activity {
     name: row.name,
     activityType: row.activity_type,
     activityDate: row.activity_date,
+    loggedAt: row.created_at,
     distanceMeters: row.distance_meters,
     movingTimeSeconds: row.moving_time_seconds,
     averageHeartrate: row.average_heartrate,
