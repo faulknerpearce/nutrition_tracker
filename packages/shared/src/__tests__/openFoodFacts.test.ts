@@ -27,6 +27,7 @@ describe('mapOpenFoodFactsToEntry', () => {
     expect(result.entry.fiber).toBe(3)
     expect(result.entry.description).toBe('')
     expect(result.hasCompleteNutrition).toBe(true)
+    expect(result.referenceWeightGrams).toBe(60)
   })
 
   it('scales per-100g values using serving quantity', () => {
@@ -49,6 +50,7 @@ describe('mapOpenFoodFactsToEntry', () => {
     expect(result.entry.carbs).toBe(6)
     expect(result.entry.fat).toBe(7.5)
     expect(result.servingNote).toBe('Per serving (150g)')
+    expect(result.referenceWeightGrams).toBe(150)
   })
 
   it('falls back to per-100g values when serving data is missing', () => {
@@ -67,5 +69,6 @@ describe('mapOpenFoodFactsToEntry', () => {
 
     expect(result.entry.calories).toBe(389)
     expect(result.servingNote).toBe('Values per 100g — adjust if needed')
+    expect(result.referenceWeightGrams).toBe(100)
   })
 })

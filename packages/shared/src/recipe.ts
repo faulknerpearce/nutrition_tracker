@@ -25,6 +25,7 @@ export interface Recipe {
   iconBg: string
   iconColor: string
   defaultServings: number
+  servingWeightGrams: number | null
   createdAt: string
   updatedAt: string
 }
@@ -48,6 +49,7 @@ export interface RecipeInput {
   iconBg?: string
   iconColor?: string
   defaultServings?: number
+  servingWeightGrams?: number | null
   ingredients: NewRecipeIngredient[]
 }
 
@@ -63,6 +65,7 @@ export function mapRecipeRow(row: {
   icon_bg: string
   icon_color: string
   default_servings: number | string
+  serving_weight_grams?: number | string | null
   created_at: string
   updated_at: string
 }): Recipe {
@@ -70,6 +73,13 @@ export function mapRecipeRow(row: {
     typeof row.default_servings === 'number'
       ? row.default_servings
       : Number.parseFloat(String(row.default_servings))
+  const servingWeightRaw = row.serving_weight_grams
+  const servingWeightGrams =
+    servingWeightRaw === null || servingWeightRaw === undefined
+      ? null
+      : typeof servingWeightRaw === 'number'
+        ? servingWeightRaw
+        : Number.parseFloat(String(servingWeightRaw))
 
   return {
     id: row.id,
@@ -79,6 +89,10 @@ export function mapRecipeRow(row: {
     iconBg: row.icon_bg,
     iconColor: row.icon_color,
     defaultServings: Number.isFinite(defaultServings) ? defaultServings : 1,
+    servingWeightGrams:
+      servingWeightGrams !== null && Number.isFinite(servingWeightGrams) && servingWeightGrams > 0
+        ? servingWeightGrams
+        : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -168,6 +182,14 @@ export function validateRecipeInput(input: RecipeInput): ValidationResult<Recipe
     return { ok: false, error: 'Default servings must be greater than 0' }
   }
 
+  let servingWeightGrams: number | null = null
+  if (input.servingWeightGrams !== undefined && input.servingWeightGrams !== null) {
+    if (!Number.isFinite(input.servingWeightGrams) || input.servingWeightGrams <= 0) {
+      return { ok: false, error: 'Serving weight must be greater than 0' }
+    }
+    servingWeightGrams = input.servingWeightGrams
+  }
+
   if (!Array.isArray(input.ingredients) || input.ingredients.length === 0) {
     return { ok: false, error: 'At least one ingredient is required' }
   }
@@ -188,6 +210,7 @@ export function validateRecipeInput(input: RecipeInput): ValidationResult<Recipe
       iconBg: typeof input.iconBg === 'string' ? input.iconBg : DEFAULT_ICON_BG,
       iconColor: typeof input.iconColor === 'string' ? input.iconColor : DEFAULT_ICON_COLOR,
       defaultServings,
+      servingWeightGrams,
       ingredients,
     },
   }
@@ -206,6 +229,7 @@ export function buildRecipeInsertPayload(
   icon_bg: string
   icon_color: string
   default_servings: number
+  serving_weight_grams: number | null
 } {
   const validated = validateRecipeInput(input)
   if (!validated.ok) throw new Error(validated.error)
@@ -220,6 +244,7 @@ export function buildRecipeInsertPayload(
     icon_bg: value.iconBg ?? DEFAULT_ICON_BG,
     icon_color: value.iconColor ?? DEFAULT_ICON_COLOR,
     default_servings: value.defaultServings ?? 1,
+    serving_weight_grams: value.servingWeightGrams ?? null,
   }
 }
 

@@ -99,6 +99,9 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
   const [defaultServings, setDefaultServings] = useState(
     recipe ? String(recipe.defaultServings) : '1',
   )
+  const [servingWeightGrams, setServingWeightGrams] = useState(
+    recipe?.servingWeightGrams ? String(recipe.servingWeightGrams) : '',
+  )
   const [ingredients, setIngredients] = useState<IngredientForm[]>(() =>
     recipe ? ingredientFormFromRecipe(recipe) : [{ ...EMPTY_INGREDIENT }],
   )
@@ -146,6 +149,18 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
       return
     }
 
+    const parsedServingWeight =
+      servingWeightGrams.trim() === '' ? null : Number.parseFloat(servingWeightGrams)
+    if (
+      servingWeightGrams.trim() !== '' &&
+      (parsedServingWeight === null ||
+        !Number.isFinite(parsedServingWeight) ||
+        parsedServingWeight <= 0)
+    ) {
+      setError('Serving weight must be greater than 0')
+      return
+    }
+
     setSaving(true)
     setError(null)
     try {
@@ -156,6 +171,7 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
         iconBg: selectedIcon.bg,
         iconColor: selectedIcon.color,
         defaultServings: servings,
+        servingWeightGrams: parsedServingWeight,
         ingredients: parsedIngredients,
       })
       onClose()
@@ -228,20 +244,40 @@ export default function RecipeEditorModal({ recipe, onSave, onClose }: RecipeEdi
         />
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <label htmlFor="recipe-servings" style={labelBase}>
-          Servings per batch
-        </label>
-        <input
-          id="recipe-servings"
-          type="number"
-          min="0.25"
-          step="0.25"
-          value={defaultServings}
-          onChange={(e) => setDefaultServings(e.target.value)}
-          style={inputBase}
-        />
+      <div className="modal-form-grid" style={{ marginBottom: 20 }}>
+        <div>
+          <label htmlFor="recipe-servings" style={labelBase}>
+            Servings per batch
+          </label>
+          <input
+            id="recipe-servings"
+            type="number"
+            min="0.25"
+            step="0.25"
+            value={defaultServings}
+            onChange={(e) => setDefaultServings(e.target.value)}
+            style={inputBase}
+          />
+        </div>
+        <div>
+          <label htmlFor="recipe-serving-weight" style={labelBase}>
+            Serving weight (g)
+          </label>
+          <input
+            id="recipe-serving-weight"
+            type="number"
+            min="1"
+            step="1"
+            value={servingWeightGrams}
+            onChange={(e) => setServingWeightGrams(e.target.value)}
+            placeholder="Optional"
+            style={inputBase}
+          />
+        </div>
       </div>
+      <p style={{ fontSize: 12, color: '#a1a1aa', margin: '-8px 0 20px 0' }}>
+        Add a serving weight to enable logging this recipe by grams later.
+      </p>
 
       <CatalogListSection
         title="Ingredients"

@@ -20,6 +20,7 @@ function recipe(
     iconBg: '#f4f4f5',
     iconColor: '#71717a',
     defaultServings: 1,
+    servingWeightGrams: null,
     createdAt: '2026-06-01T00:00:00Z',
     updatedAt: '2026-06-01T00:00:00Z',
     batchTotals: emptyTotals,

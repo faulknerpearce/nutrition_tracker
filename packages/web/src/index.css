@@ -174,9 +174,59 @@ body {
 .catalog-row-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   padding: 10px 12px 10px 0;
   flex-wrap: wrap;
+}
+
+.catalog-row-actions:has(.catalog-add-log-button) {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.delicate-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #a1a1aa;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.delicate-icon-action:hover:not(:disabled) {
+  color: #71717a;
+}
+
+.delicate-icon-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.catalog-add-log-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: var(--zone-accent);
+  color: var(--zone-accent-text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: filter 0.15s ease;
+}
+
+.catalog-add-log-button:hover {
+  filter: brightness(0.94);
 }
 
 .inputs-day-nav {

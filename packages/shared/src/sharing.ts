@@ -177,6 +177,9 @@ export function buildForkEntryInput(source: FoodEntry): FoodEntryWrite {
     fat: source.fat,
     fiber: source.fiber,
     caffeine: source.caffeine,
+    portionUnit: source.portionUnit,
+    portionQuantity: source.portionQuantity,
+    referenceWeightGrams: source.referenceWeightGrams,
   }
 }
 
@@ -188,6 +191,7 @@ export function buildForkRecipeInput(source: RecipeWithIngredients): RecipeInput
     iconBg: source.iconBg,
     iconColor: source.iconColor,
     defaultServings: source.defaultServings,
+    servingWeightGrams: source.servingWeightGrams,
     ingredients: source.ingredients.map((ingredient) => ({
       name: ingredient.name,
       amount: ingredient.amount,

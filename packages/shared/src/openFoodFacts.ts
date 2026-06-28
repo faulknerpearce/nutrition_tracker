@@ -17,6 +17,7 @@ export interface OpenFoodFactsProduct {
 export interface MappedBarcodeProduct {
   entry: NewFoodEntry
   servingNote: string
+  referenceWeightGrams: number
   hasCompleteNutrition: boolean
 }
 
@@ -134,5 +135,7 @@ export function mapOpenFoodFactsToEntry(
   const hasCompleteNutrition =
     entry.calories > 0 && entry.protein >= 0 && entry.carbs >= 0 && entry.fat >= 0
 
-  return { entry, servingNote, hasCompleteNutrition }
+  const referenceWeightGrams = servingGrams ?? 100
+
+  return { entry, servingNote, referenceWeightGrams, hasCompleteNutrition }
 }

@@ -19,6 +19,11 @@ function makeRow(overrides: Partial<FoodRow> = {}): FoodRow {
     user_id: 'user-1',
     created_at: '2026-06-22T08:00:00Z',
     entry_date: '2026-06-22',
+    recipe_id: null,
+    servings_logged: null,
+    portion_unit: null,
+    portion_quantity: null,
+    reference_weight_grams: null,
     ...overrides,
   }
 }
@@ -48,6 +53,9 @@ describe('mapRow', () => {
       fat: 4,
       fiber: 1,
       loggedAt: '2026-06-22T08:00:00Z',
+      portionUnit: null,
+      portionQuantity: null,
+      referenceWeightGrams: null,
     })
   })
 

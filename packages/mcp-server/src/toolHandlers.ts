@@ -2,7 +2,9 @@ import {
   buildActivityInsertPayload,
   buildActivityUpdatePayload,
   buildInsertPayload,
+  buildPortionPayload,
   buildUpdatePayload,
+  parsePortionMeta,
   DEFAULT_NUTRITION_GOALS,
   DEFAULT_TIMEZONE,
   mapActivityExerciseRow,
@@ -76,10 +78,12 @@ export async function addFoodEntryForDate(
   const loggedAt = args.loggedAt === undefined ? undefined : parseLoggedAt(args.loggedAt)
   if (loggedAt && !loggedAt.ok) throw new Error(loggedAt.error)
 
+  const portion = parsePortionMeta(args)
   const entry = {
     ...buildInsertPayload(parsed.value, crypto.randomUUID(), userId),
     entry_date: date,
     ...(loggedAt?.ok ? { created_at: loggedAt.value } : {}),
+    ...(portion ? buildPortionPayload(portion) : {}),
   }
   const { data, error } = await supabase.from('food_entries').insert(entry).select().single()
   if (error) throw error
@@ -106,6 +110,10 @@ export async function updateFoodEntry(supabase: NutritionSupabase, args: ToolArg
   const parsed = parseEntryInput(partial)
   if (!parsed.ok) throw new Error(parsed.error)
   const updates = buildUpdatePayload(parsed.value) as FoodUpdate
+  const portion = parsePortionMeta(args)
+  if (portion) {
+    Object.assign(updates, buildPortionPayload(portion))
+  }
   if (typeof args.date === 'string') updates.entry_date = args.date
   if (args.loggedAt !== undefined) {
     const loggedAt = parseLoggedAt(args.loggedAt)

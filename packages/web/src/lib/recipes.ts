@@ -12,6 +12,7 @@ import {
   todayISO,
   validateServingsLogged,
   type NewRecipeIngredient,
+  type PortionUnit,
   type RecipeInput,
   type RecipeSummary,
   type RecipeWithIngredients,
@@ -186,12 +187,35 @@ export async function forkRecipe(
 export async function logRecipe(options: {
   recipeId: string
   servings?: number
+  portionUnit?: PortionUnit
+  portionQuantity?: number
+  servingWeightGrams?: number
   entryDate?: string
   loggedAt?: string
 }): Promise<FoodEntry> {
   const recipe = await fetchRecipe(options.recipeId)
-  const servings = validateServingsLogged(options.servings ?? 1)
-  const totals = scaleRecipeToServings(recipe.batchTotals, recipe.defaultServings, servings)
+  const portionUnit = options.portionUnit ?? 'servings'
+  const portionQuantity = validateServingsLogged(
+    options.portionQuantity ?? options.servings ?? 1,
+  )
+  const referenceWeightGrams =
+    portionUnit === 'grams'
+      ? options.servingWeightGrams ?? recipe.servingWeightGrams
+      : recipe.servingWeightGrams
+
+  if (portionUnit === 'grams' && !referenceWeightGrams) {
+    throw new Error('Enter a serving weight greater than 0 to log by grams.')
+  }
+
+  const effectiveServings =
+    portionUnit === 'grams'
+      ? portionQuantity / (referenceWeightGrams as number)
+      : portionQuantity
+  const totals = scaleRecipeToServings(
+    recipe.batchTotals,
+    recipe.defaultServings,
+    effectiveServings,
+  )
   const userId = await requireUserId()
 
   const { data, error } = await supabase
@@ -212,7 +236,10 @@ export async function logRecipe(options: {
       caffeine: totals.caffeine,
       entry_date: options.entryDate ?? todayISO(),
       recipe_id: recipe.id,
-      servings_logged: servings,
+      servings_logged: portionUnit === 'servings' ? portionQuantity : null,
+      portion_unit: portionUnit,
+      portion_quantity: portionQuantity,
+      reference_weight_grams: referenceWeightGrams,
       ...(options.loggedAt ? { created_at: options.loggedAt } : {}),
     })
     .select()

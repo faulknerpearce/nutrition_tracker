@@ -1,10 +1,12 @@
 import {
   buildForkEntryInput,
   buildInsertPayload,
+  buildPortionPayload,
   buildUpdatePayload,
   mapRow,
   offsetDateISO,
   parseEntryInput,
+  parsePortionMeta,
   sumTotals,
   todayISO,
   type FoodEntry,
@@ -84,10 +86,12 @@ export async function addEntry(
   const parsed = parseEntryInput(input as Record<string, unknown>)
   if (!parsed.ok) throw new Error(parsed.error)
 
+  const portion = parsePortionMeta(input as Record<string, unknown>)
   const entry = {
     ...buildInsertPayload(parsed.value, crypto.randomUUID(), userId),
     entry_date: options?.entryDate ?? todayISO(),
     ...(input.loggedAt ? { created_at: input.loggedAt } : {}),
+    ...(portion ? buildPortionPayload(portion) : {}),
   }
   const { data, error } = await supabase.from('food_entries').insert(entry).select().single()
   if (error) throw new Error(error.message)

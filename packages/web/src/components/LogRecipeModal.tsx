@@ -1,31 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
-import { scaleRecipeToServings, type RecipeSummary } from '@nutrition-tracker/shared'
+import { scaleRecipeToServings, type PortionUnit, type RecipeSummary } from '@nutrition-tracker/shared'
 import { focusIfDesktop } from '../lib/device'
 import { inputBase, labelBase } from '../lib/styles'
 import Modal from './Modal'
 
 interface LogRecipeModalProps {
   recipe: RecipeSummary
-  onLog: (servings: number) => Promise<void>
+  onLog: (options: { portionUnit: PortionUnit; portionQuantity: number }) => Promise<void>
   onClose: () => void
 }
 
 export default function LogRecipeModal({ recipe, onLog, onClose }: LogRecipeModalProps) {
-  const [servings, setServings] = useState('1')
+  const [portionUnit, setPortionUnit] = useState<PortionUnit>('servings')
+  const [portionQuantity, setPortionQuantity] = useState('1')
   const [logging, setLogging] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const servingsRef = useRef<HTMLInputElement | null>(null)
+  const portionRef = useRef<HTMLInputElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
-  const servingsNum = Number.parseFloat(servings)
+  const portionQuantityNum = Number.parseFloat(portionQuantity)
+  const effectiveServings =
+    portionQuantity !== '' && Number.isFinite(portionQuantityNum)
+      ? portionUnit === 'grams'
+        ? recipe.servingWeightGrams
+          ? portionQuantityNum / recipe.servingWeightGrams
+          : NaN
+        : portionQuantityNum
+      : NaN
   const previewTotals =
-    servings !== '' && Number.isFinite(servingsNum) && servingsNum > 0
-      ? scaleRecipeToServings(recipe.batchTotals, recipe.defaultServings, servingsNum)
+    Number.isFinite(effectiveServings) && effectiveServings > 0
+      ? scaleRecipeToServings(recipe.batchTotals, recipe.defaultServings, effectiveServings)
       : null
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null
-    focusIfDesktop(servingsRef.current)
+    focusIfDesktop(portionRef.current)
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -42,15 +51,20 @@ export default function LogRecipeModal({ recipe, onLog, onClose }: LogRecipeModa
   }, [])
 
   const submit = async () => {
-    if (!Number.isFinite(servingsNum) || servingsNum <= 0) {
-      setError('Servings must be greater than 0')
+    if (portionUnit === 'grams' && !recipe.servingWeightGrams) {
+      setError('This recipe has no serving weight. Log by servings or add one in the recipe editor.')
+      return
+    }
+
+    if (!Number.isFinite(portionQuantityNum) || portionQuantityNum <= 0) {
+      setError(portionUnit === 'grams' ? 'Weight must be greater than 0' : 'Servings must be greater than 0')
       return
     }
 
     setLogging(true)
     setError(null)
     try {
-      await onLog(servingsNum)
+      await onLog({ portionUnit, portionQuantity: portionQuantityNum })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log recipe')
@@ -92,23 +106,48 @@ export default function LogRecipeModal({ recipe, onLog, onClose }: LogRecipeModa
         </div>
       )}
 
+      {recipe.servingWeightGrams ? (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {(['servings', 'grams'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPortionUnit(value)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 9999,
+                border: portionUnit === value ? '1px solid #134e4b' : '1px solid #e4e4e7',
+                background: portionUnit === value ? '#134e4b' : 'white',
+                color: portionUnit === value ? 'white' : '#52525b',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {value === 'servings' ? 'Servings' : 'Weight (g)'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div style={{ marginBottom: 16 }}>
-        <label htmlFor="log-recipe-servings" style={labelBase}>
-          How many servings did you have?
+        <label htmlFor="log-recipe-portion" style={labelBase}>
+          {portionUnit === 'grams' ? 'How many grams did you have?' : 'How many servings did you have?'}
         </label>
         <input
-          id="log-recipe-servings"
-          ref={servingsRef}
+          id="log-recipe-portion"
+          ref={portionRef}
           type="number"
-          min="0.25"
-          step="0.25"
-          value={servings}
-          onChange={(e) => setServings(e.target.value)}
+          min={portionUnit === 'grams' ? '1' : '0.25'}
+          step={portionUnit === 'grams' ? '1' : '0.25'}
+          value={portionQuantity}
+          onChange={(e) => setPortionQuantity(e.target.value)}
           style={inputBase}
         />
         <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
           Recipe makes {recipe.defaultServings} servings per batch ({recipe.perServingTotals.calories}{' '}
           kcal per serving)
+          {recipe.servingWeightGrams ? ` · one serving weighs ${recipe.servingWeightGrams}g` : ''}.
         </p>
       </div>
 

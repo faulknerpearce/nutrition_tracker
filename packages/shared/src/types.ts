@@ -1,4 +1,7 @@
 import type { Database } from './database.js'
+import type { PortionMeta, PortionUnit } from './portionScaling.js'
+
+export type { PortionMeta, PortionUnit }
 
 export type FoodRow = Database['public']['Tables']['food_entries']['Row']
 export type FoodInsert = Database['public']['Tables']['food_entries']['Insert']
@@ -18,10 +21,21 @@ export interface FoodEntry {
   fat: number
   fiber: number
   loggedAt: string
+  portionUnit?: PortionUnit | null
+  portionQuantity?: number | null
+  referenceWeightGrams?: number | null
 }
 
-export type NewFoodEntry = Omit<FoodEntry, 'id' | 'loggedAt'>
-export type FoodEntryWrite = NewFoodEntry & { loggedAt?: string }
+export type NewFoodEntry = Omit<FoodEntry, 'id' | 'loggedAt' | 'portionUnit' | 'portionQuantity' | 'referenceWeightGrams'> & {
+  portionUnit?: PortionUnit | null
+  portionQuantity?: number | null
+  referenceWeightGrams?: number | null
+}
+export type FoodEntryWrite = NewFoodEntry & {
+  loggedAt?: string
+  /** Helper text for barcode/manual prefill; not persisted. */
+  nutritionBasisNote?: string
+}
 export type UpdateFoodEntry = Partial<NewFoodEntry> & { loggedAt?: string }
 
 export type Totals = {

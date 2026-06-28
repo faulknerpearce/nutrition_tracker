@@ -15,5 +15,15 @@ export function mapRow(row: FoodRow): FoodEntry {
     fat: row.fat ?? 0,
     fiber: row.fiber ?? 0,
     loggedAt: row.created_at,
+    portionUnit:
+      row.portion_unit === 'servings' || row.portion_unit === 'grams' ? row.portion_unit : null,
+    portionQuantity:
+      row.portion_quantity === null || row.portion_quantity === undefined
+        ? null
+        : Number(row.portion_quantity),
+    referenceWeightGrams:
+      row.reference_weight_grams === null || row.reference_weight_grams === undefined
+        ? null
+        : Number(row.reference_weight_grams),
   }
 }

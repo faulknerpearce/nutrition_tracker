@@ -187,8 +187,24 @@ export async function logRecipeEntry(supabase: NutritionSupabase, args: RecipeTo
   const recipeId =
     typeof args.recipeId === 'string' ? args.recipeId : (args.recipe_id as string)
   const recipe = await getRecipe(supabase, recipeId)
-  const servings = validateServingsLogged(args.servings ?? 1)
-  const totals = scaleRecipeToServings(recipe.batchTotals, recipe.defaultServings, servings)
+  const portionUnit = args.portionUnit === 'grams' ? 'grams' : 'servings'
+  const portionQuantity = validateServingsLogged(args.portionQuantity ?? args.servings ?? 1)
+
+  if (portionUnit === 'grams' && !recipe.servingWeightGrams) {
+    throw new Error(
+      'This recipe has no serving weight. Log by servings or add a serving weight in the recipe editor.',
+    )
+  }
+
+  const effectiveServings =
+    portionUnit === 'grams'
+      ? portionQuantity / (recipe.servingWeightGrams as number)
+      : portionQuantity
+  const totals = scaleRecipeToServings(
+    recipe.batchTotals,
+    recipe.defaultServings,
+    effectiveServings,
+  )
   const userId = await requireUserId(supabase)
   const timeZone = await fetchUserTimeZone(supabase)
   const dateParsed = parseLogDate(args.date, {
@@ -215,7 +231,11 @@ export async function logRecipeEntry(supabase: NutritionSupabase, args: RecipeTo
       caffeine: totals.caffeine,
       entry_date: dateParsed.value,
       recipe_id: recipe.id,
-      servings_logged: servings,
+      servings_logged: portionUnit === 'servings' ? portionQuantity : null,
+      portion_unit: portionUnit,
+      portion_quantity: portionQuantity,
+      reference_weight_grams:
+        portionUnit === 'grams' ? recipe.servingWeightGrams : recipe.servingWeightGrams,
     })
     .select()
     .single()

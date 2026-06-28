@@ -1,3 +1,4 @@
+import { formatPortionLabel } from '@nutrition-tracker/shared'
 import { useState } from 'react'
 import type { MappedBarcodeProduct } from '../lib/openFoodFacts'
 import type { FoodEntry, FoodEntryWrite } from '../lib/entries'
@@ -12,12 +13,20 @@ interface FoodLogSectionProps {
   timeZone: string
   onAdd?: (
     entry: FoodEntryWrite,
-    options?: { saveAsRecipe?: boolean; perServing?: FoodEntryWrite },
+    options?: {
+      saveAsRecipe?: boolean
+      perServing?: FoodEntryWrite
+      servingWeightGrams?: number
+    },
   ) => Promise<void>
   onLogRecipe?: (
     recipeId: string,
-    servings: number,
-    options?: { loggedAt?: string },
+    options: {
+      portionUnit: import('@nutrition-tracker/shared').PortionUnit
+      portionQuantity: number
+      servingWeightGrams?: number
+      loggedAt?: string
+    },
   ) => Promise<void>
   onEdit?: (id: string, entry: FoodEntryWrite) => Promise<void>
   onDelete?: (id: string) => Promise<void>
@@ -132,7 +141,9 @@ export default function FoodLogSection({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div>
                   <div style={{ fontWeight: 600 }}>{item.name}</div>
-                  <div style={{ fontSize: 12, color: '#71717a' }}>{item.description}</div>
+                  <div style={{ fontSize: 12, color: '#71717a' }}>
+                    {[item.description, formatPortionLabel(item)].filter(Boolean).join(' · ')}
+                  </div>
                 </div>
                 <div
                   style={{
@@ -260,7 +271,11 @@ export default function FoodLogSection({
       {showScanner && onAdd && (
         <BarcodeScannerModal
           onProductFound={(product: MappedBarcodeProduct) => {
-            setPrefillEntry(product.entry)
+            setPrefillEntry({
+              ...product.entry,
+              referenceWeightGrams: product.referenceWeightGrams,
+              nutritionBasisNote: product.servingNote,
+            })
             setShowScanner(false)
             setShowAddForm(true)
           }}

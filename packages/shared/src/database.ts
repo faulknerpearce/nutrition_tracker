@@ -22,6 +22,9 @@ export type Database = {
           entry_date: string
           recipe_id: string | null
           servings_logged: number | null
+          portion_unit: string | null
+          portion_quantity: number | null
+          reference_weight_grams: number | null
         }
         Insert: {
           id?: string
@@ -41,6 +44,9 @@ export type Database = {
           entry_date?: string
           recipe_id?: string | null
           servings_logged?: number | null
+          portion_unit?: string | null
+          portion_quantity?: number | null
+          reference_weight_grams?: number | null
         }
         Update: {
           id?: string
@@ -60,6 +66,9 @@ export type Database = {
           entry_date?: string
           recipe_id?: string | null
           servings_logged?: number | null
+          portion_unit?: string | null
+          portion_quantity?: number | null
+          reference_weight_grams?: number | null
         }
         Relationships: [
           {
@@ -88,6 +97,7 @@ export type Database = {
           icon_bg: string
           icon_color: string
           default_servings: number
+          serving_weight_grams: number | null
           forked_from_recipe_id: string | null
           created_at: string
           updated_at: string
@@ -101,6 +111,7 @@ export type Database = {
           icon_bg?: string
           icon_color?: string
           default_servings?: number
+          serving_weight_grams?: number | null
           forked_from_recipe_id?: string | null
           created_at?: string
           updated_at?: string
@@ -114,6 +125,7 @@ export type Database = {
           icon_bg?: string
           icon_color?: string
           default_servings?: number
+          serving_weight_grams?: number | null
           forked_from_recipe_id?: string | null
           created_at?: string
           updated_at?: string

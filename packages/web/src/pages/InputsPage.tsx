@@ -121,7 +121,11 @@ export default function InputsPage({
 
   async function persistAdd(
     input: FoodEntryWrite,
-    options?: { saveAsRecipe?: boolean; perServing?: FoodEntryWrite },
+    options?: {
+      saveAsRecipe?: boolean
+      perServing?: FoodEntryWrite
+      servingWeightGrams?: number
+    },
   ) {
     const entry = await addEntry(input)
     if (options?.saveAsRecipe) {
@@ -133,6 +137,7 @@ export default function InputsPage({
         iconBg: recipeSource.iconBg,
         iconColor: recipeSource.iconColor,
         defaultServings: 1,
+        servingWeightGrams: options.servingWeightGrams,
         ingredients: [
           {
             name: recipeSource.name,
@@ -160,10 +165,20 @@ export default function InputsPage({
 
   async function persistLogRecipe(
     recipeId: string,
-    servings: number,
-    options?: { loggedAt?: string },
+    options: {
+      portionUnit: import('@nutrition-tracker/shared').PortionUnit
+      portionQuantity: number
+      servingWeightGrams?: number
+      loggedAt?: string
+    },
   ) {
-    const entry = await logRecipe({ recipeId, servings, loggedAt: options?.loggedAt })
+    const entry = await logRecipe({
+      recipeId,
+      portionUnit: options.portionUnit,
+      portionQuantity: options.portionQuantity,
+      servingWeightGrams: options.servingWeightGrams,
+      loggedAt: options.loggedAt,
+    })
     setDays((prev) => {
       const existing = prev.find((day) => day.date === today)
       if (existing) {
@@ -260,7 +275,11 @@ export default function InputsPage({
       {showScanner && (
         <BarcodeScannerModal
           onProductFound={(product: MappedBarcodeProduct) => {
-            setPrefillEntry(product.entry)
+            setPrefillEntry({
+              ...product.entry,
+              referenceWeightGrams: product.referenceWeightGrams,
+              nutritionBasisNote: product.servingNote,
+            })
             setShowScanner(false)
             setShowAddForm(true)
           }}

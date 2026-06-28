@@ -74,6 +74,19 @@ const foodFields = {
   icon: { type: 'string', description: 'Font Awesome icon class (default fa-utensils)' },
   iconBg: { type: 'string', description: 'Background color hex (default #f4f4f5)' },
   iconColor: { type: 'string', description: 'Icon color hex (default #71717a)' },
+  portionUnit: {
+    type: 'string',
+    enum: ['servings', 'grams'],
+    description: 'How the entry amount was logged (optional metadata for display)',
+  },
+  portionQuantity: {
+    type: 'number',
+    description: 'Servings count or grams eaten when portionUnit is set',
+  },
+  referenceWeightGrams: {
+    type: 'number',
+    description: 'Gram weight that the logged macro totals are based on',
+  },
 }
 
 const activityFields = {
