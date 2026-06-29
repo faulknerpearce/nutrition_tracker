@@ -184,27 +184,13 @@ export default function FoodLogSection({
                     </span>
                   )}
                   {(onEdit || !readOnly) && (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        marginLeft: 'auto',
-                      }}
-                    >
+                    <span className="log-entry-icon-actions">
                       {!readOnly && (
                         <button
                           type="button"
+                          className="delicate-icon-action"
                           onClick={() => setSharingEntry(item)}
                           aria-label="Share entry"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#a1a1aa',
-                            padding: 0,
-                            fontSize: 13,
-                          }}
                           title="Share entry"
                         >
                           <i className="fa-regular fa-share-from-square" />
@@ -213,16 +199,9 @@ export default function FoodLogSection({
                       {onEdit && (
                         <button
                           type="button"
+                          className="delicate-icon-action"
                           onClick={() => setEditingEntry(item)}
                           aria-label="Edit entry"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#a1a1aa',
-                            padding: 0,
-                            fontSize: 13,
-                          }}
                           title="Edit entry"
                         >
                           <i className="fa-regular fa-pen-to-square" />
@@ -231,17 +210,10 @@ export default function FoodLogSection({
                       {!readOnly && onDelete && (
                         <button
                           type="button"
+                          className="delicate-icon-action"
                           onClick={() => removeEntry(item.id)}
                           disabled={deleting === item.id}
                           aria-label="Remove entry"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#a1a1aa',
-                            padding: 0,
-                            fontSize: 13,
-                          }}
                           title="Remove entry"
                         >
                           <i className="fa-regular fa-trash-can" />
