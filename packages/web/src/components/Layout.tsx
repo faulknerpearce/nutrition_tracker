@@ -8,7 +8,7 @@ import {
   routeZone,
   type AppRoute,
 } from '../lib/routing'
-import { fetchNewSharedCount, markSharedAsSeen } from '../lib/sharedNotifications'
+import { fetchNewSharedCount } from '../lib/sharedNotifications'
 import MobileTabBar from './layout/MobileTabBar'
 
 interface LayoutProps {
@@ -45,7 +45,6 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
     }
 
     if (activeRoute === 'shared') {
-      markSharedAsSeen()
       setNewShareCount(0)
       return
     }

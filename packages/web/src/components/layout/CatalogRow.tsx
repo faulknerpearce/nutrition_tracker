@@ -8,6 +8,7 @@ interface CatalogRowProps {
   subtitle: string
   actions: ReactNode
   onView?: () => void
+  isNew?: boolean
 }
 
 export default function CatalogRow({
@@ -18,9 +19,10 @@ export default function CatalogRow({
   subtitle,
   actions,
   onView,
+  isNew = false,
 }: CatalogRowProps) {
   return (
-    <div className="catalog-row">
+    <div className={`catalog-row${isNew ? ' catalog-row--new' : ''}`}>
       <button
         type="button"
         className="catalog-row-main"
@@ -32,7 +34,10 @@ export default function CatalogRow({
           <i className={`fa-solid ${icon}`} style={{ color: iconColor }} aria-hidden="true" />
         </div>
         <div className="catalog-row-text">
-          <div className="catalog-row-title">{title}</div>
+          <div className="catalog-row-title">
+            {title}
+            {isNew && <span className="catalog-row-new-badge">New</span>}
+          </div>
           <div className="catalog-row-subtitle">{subtitle}</div>
         </div>
       </button>

@@ -130,6 +130,11 @@ body {
   overflow: hidden;
 }
 
+.catalog-row--new {
+  border: 2px solid #18181b;
+  box-shadow: 0 0 0 1px #18181b;
+}
+
 .catalog-row-main {
   flex: 1;
   display: flex;
@@ -160,9 +165,27 @@ body {
 }
 
 .catalog-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   font-weight: 600;
   font-size: 14px;
   color: #18181b;
+}
+
+.catalog-row-new-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1.5px solid #18181b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #18181b;
+  line-height: 1.2;
 }
 
 .catalog-row-subtitle {
@@ -225,8 +248,13 @@ body {
   transition: filter 0.15s ease;
 }
 
-.catalog-add-log-button:hover {
+.catalog-add-log-button:hover:not(:disabled) {
   filter: brightness(0.94);
+}
+
+.catalog-add-log-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .inputs-day-nav {

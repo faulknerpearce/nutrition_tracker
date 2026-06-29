@@ -181,6 +181,40 @@ export async function revokeRecipeShare(shareId: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+const SHARE_DISMISS_FORBIDDEN = 'Share not found or you do not have permission to remove it'
+
+async function dismissShareForRecipient(
+  table: 'recipe_shares' | 'food_entry_shares' | 'activity_shares' | 'workout_shares',
+  shareId: string,
+): Promise<void> {
+  const userId = await requireUserId()
+  const { data, error } = await supabase
+    .from(table)
+    .delete()
+    .eq('id', shareId)
+    .eq('shared_with_user_id', userId)
+    .select('id')
+  if (error) throw new Error(error.message)
+  if (!data?.length) throw new Error(SHARE_DISMISS_FORBIDDEN)
+}
+
+/** Remove a recipe share from the recipient's Shared With Me list. */
+export async function dismissRecipeShare(shareId: string): Promise<void> {
+  await dismissShareForRecipient('recipe_shares', shareId)
+}
+
+export async function dismissEntryShare(shareId: string): Promise<void> {
+  await dismissShareForRecipient('food_entry_shares', shareId)
+}
+
+export async function dismissActivityShare(shareId: string): Promise<void> {
+  await dismissShareForRecipient('activity_shares', shareId)
+}
+
+export async function dismissWorkoutShare(shareId: string): Promise<void> {
+  await dismissShareForRecipient('workout_shares', shareId)
+}
+
 export async function revokeEntryShare(shareId: string): Promise<void> {
   const { error } = await supabase.from('food_entry_shares').delete().eq('id', shareId)
   if (error) throw new Error(error.message)

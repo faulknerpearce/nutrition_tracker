@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import CatalogRow from '../components/layout/CatalogRow'
 import PageHeader from '../components/layout/PageHeader'
 import { PageError, PageLoading } from '../components/layout/PageState'
-import ZoneButton from '../components/layout/ZoneButton'
 import RecipeViewModal from '../components/RecipeViewModal'
 import SharedActivityViewModal from '../components/SharedActivityViewModal'
 import SharedEntryViewModal from '../components/SharedEntryViewModal'
@@ -13,8 +12,12 @@ import { iconForActivityType } from '../lib/activityIcons'
 import { forkActivity } from '../lib/activities'
 import { forkEntry } from '../lib/entries'
 import { forkRecipe } from '../lib/recipes'
-import { markSharedAsSeen } from '../lib/sharedNotifications'
+import { getSharedSeenAt, isShareNew, markSharedAsSeen } from '../lib/sharedNotifications'
 import {
+  dismissActivityShare,
+  dismissEntryShare,
+  dismissRecipeShare,
+  dismissWorkoutShare,
   fetchActivitiesSharedWithMe,
   fetchEntriesSharedWithMe,
   fetchRecipesSharedWithMe,
@@ -62,6 +65,76 @@ function SharedSection({
   )
 }
 
+function SharedCatalogActions({
+  resourceLabel,
+  onView,
+  onDismiss,
+  dismissing,
+  onPrimary,
+  primaryDisabled,
+  primaryDone,
+  primaryLoading,
+  primaryDoneLabel,
+  primaryActionLabel,
+  primaryIconClass,
+}: {
+  resourceLabel: string
+  onView: () => void
+  onDismiss: () => void
+  dismissing: boolean
+  onPrimary: () => void
+  primaryDisabled: boolean
+  primaryDone: boolean
+  primaryLoading: boolean
+  primaryDoneLabel: string
+  primaryActionLabel: string
+  primaryIconClass: string
+}) {
+  const primaryTitle = primaryDone
+    ? primaryDoneLabel
+    : primaryLoading
+      ? `${primaryActionLabel}...`
+      : primaryActionLabel
+
+  return (
+    <>
+      <button
+        type="button"
+        className="delicate-icon-action"
+        onClick={onView}
+        aria-label={`View ${resourceLabel}`}
+        title={`View ${resourceLabel}`}
+      >
+        <i className="fa-regular fa-eye" />
+      </button>
+      <button
+        type="button"
+        className="delicate-icon-action"
+        onClick={onDismiss}
+        disabled={dismissing}
+        aria-label={`Remove shared ${resourceLabel}`}
+        title={`Remove shared ${resourceLabel}`}
+      >
+        <i className="fa-regular fa-trash-can" />
+      </button>
+      <button
+        type="button"
+        className="catalog-add-log-button"
+        onClick={onPrimary}
+        disabled={primaryDisabled}
+        aria-label={primaryTitle}
+        title={primaryTitle}
+      >
+        <i
+          className={
+            primaryLoading ? 'fa-solid fa-spinner fa-spin' : `fa-solid ${primaryIconClass}`
+          }
+        />
+      </button>
+    </>
+  )
+}
+
 export default function SharedWithMePage() {
   const { profile } = useProfile()
   const [loading, setLoading] = useState(true)
@@ -78,6 +151,11 @@ export default function SharedWithMePage() {
   const [savingRecipeId, setSavingRecipeId] = useState<string | null>(null)
   const [savingActivityId, setSavingActivityId] = useState<string | null>(null)
   const [savingWorkoutId, setSavingWorkoutId] = useState<string | null>(null)
+  const [dismissingEntryId, setDismissingEntryId] = useState<string | null>(null)
+  const [dismissingRecipeId, setDismissingRecipeId] = useState<string | null>(null)
+  const [dismissingActivityId, setDismissingActivityId] = useState<string | null>(null)
+  const [dismissingWorkoutId, setDismissingWorkoutId] = useState<string | null>(null)
+  const [seenAtBaseline] = useState(() => getSharedSeenAt())
 
   const loadShared = async () => {
     const [sharedEntries, sharedRecipes, sharedActivities, sharedWorkouts] = await Promise.all([
@@ -93,14 +171,19 @@ export default function SharedWithMePage() {
   }
 
   useEffect(() => {
-    markSharedAsSeen()
     loadShared()
       .then(() => setLoading(false))
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load shared items')
         setLoading(false)
       })
+
+    return () => {
+      markSharedAsSeen()
+    }
   }, [])
+
+  const isNew = (createdAt: string) => isShareNew(createdAt, seenAtBaseline)
 
   const totalCount = entries.length + recipes.length + activities.length + workouts.length
 
@@ -156,6 +239,62 @@ export default function SharedWithMePage() {
     }
   }
 
+  const handleDismissEntry = async (item: SharedEntryItem) => {
+    setDismissingEntryId(item.share.id)
+    setError(null)
+    try {
+      await dismissEntryShare(item.share.id)
+      setEntries((prev) => prev.filter((entry) => entry.share.id !== item.share.id))
+      if (viewingEntry?.share.id === item.share.id) setViewingEntry(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove shared meal')
+    } finally {
+      setDismissingEntryId(null)
+    }
+  }
+
+  const handleDismissRecipe = async (item: SharedRecipeItem) => {
+    setDismissingRecipeId(item.share.id)
+    setError(null)
+    try {
+      await dismissRecipeShare(item.share.id)
+      setRecipes((prev) => prev.filter((recipe) => recipe.share.id !== item.share.id))
+      if (viewingRecipe?.share.id === item.share.id) setViewingRecipe(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove shared recipe')
+    } finally {
+      setDismissingRecipeId(null)
+    }
+  }
+
+  const handleDismissActivity = async (item: SharedActivityItem) => {
+    setDismissingActivityId(item.share.id)
+    setError(null)
+    try {
+      await dismissActivityShare(item.share.id)
+      setActivities((prev) => prev.filter((activity) => activity.share.id !== item.share.id))
+      if (viewingActivity?.share.id === item.share.id) setViewingActivity(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove shared activity')
+    } finally {
+      setDismissingActivityId(null)
+    }
+  }
+
+  const handleDismissWorkout = async (item: SharedWorkoutItem) => {
+    setDismissingWorkoutId(item.share.id)
+    setError(null)
+    try {
+      await dismissWorkoutShare(item.share.id)
+      setWorkouts((prev) => prev.filter((workout) => workout.share.id !== item.share.id))
+      if (viewingWorkout?.share.id === item.share.id) setViewingWorkout(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove shared workout')
+    } finally {
+      setDismissingWorkoutId(null)
+    }
+  }
+
   if (loading) return <PageLoading message="Loading shared items..." />
   if (error && totalCount === 0) return <PageError message="Failed to load shared items" detail={error} />
 
@@ -193,6 +332,7 @@ export default function SharedWithMePage() {
             {entries.map((item) => (
               <CatalogRow
                 key={item.share.id}
+                isNew={isNew(item.share.createdAt)}
                 icon={item.entry.icon}
                 iconBg={item.entry.iconBg}
                 iconColor={item.entry.iconColor}
@@ -200,20 +340,23 @@ export default function SharedWithMePage() {
                 subtitle={`Shared by ${item.share.ownerDisplayName} · ${item.entry.calories} kcal`}
                 onView={() => setViewingEntry(item)}
                 actions={
-                  <>
-                    <ZoneButton onClick={() => setViewingEntry(item)}>View</ZoneButton>
-                    <ZoneButton
-                      variant="primary"
-                      onClick={() => handleAddSharedEntry(item)}
-                      disabled={!!item.share.savedCopyId || savingEntryId === item.share.id}
-                    >
-                      {item.share.savedCopyId
-                        ? 'Already added'
-                        : savingEntryId === item.share.id
-                          ? 'Adding...'
-                          : 'Add to my log'}
-                    </ZoneButton>
-                  </>
+                  <SharedCatalogActions
+                    resourceLabel="meal"
+                    onView={() => setViewingEntry(item)}
+                    onDismiss={() => handleDismissEntry(item)}
+                    dismissing={dismissingEntryId === item.share.id}
+                    onPrimary={() => handleAddSharedEntry(item)}
+                    primaryDisabled={
+                      !!item.share.savedCopyId ||
+                      savingEntryId === item.share.id ||
+                      dismissingEntryId === item.share.id
+                    }
+                    primaryDone={!!item.share.savedCopyId}
+                    primaryLoading={savingEntryId === item.share.id}
+                    primaryDoneLabel="Already added"
+                    primaryActionLabel="Add to my log"
+                    primaryIconClass="fa-bookmark"
+                  />
                 }
               />
             ))}
@@ -229,6 +372,7 @@ export default function SharedWithMePage() {
             {recipes.map((item) => (
               <CatalogRow
                 key={item.share.id}
+                isNew={isNew(item.share.createdAt)}
                 icon={item.recipe.icon}
                 iconBg={item.recipe.iconBg}
                 iconColor={item.recipe.iconColor}
@@ -236,20 +380,23 @@ export default function SharedWithMePage() {
                 subtitle={`Shared by ${item.share.ownerDisplayName} · ${item.recipe.ingredientCount} ingredients`}
                 onView={() => setViewingRecipe(item)}
                 actions={
-                  <>
-                    <ZoneButton onClick={() => setViewingRecipe(item)}>View</ZoneButton>
-                    <ZoneButton
-                      variant="primary"
-                      onClick={() => handleSaveSharedRecipe(item)}
-                      disabled={!!item.share.savedCopyId || savingRecipeId === item.share.id}
-                    >
-                      {item.share.savedCopyId
-                        ? 'Already saved'
-                        : savingRecipeId === item.share.id
-                          ? 'Saving...'
-                          : 'Save to my library'}
-                    </ZoneButton>
-                  </>
+                  <SharedCatalogActions
+                    resourceLabel="recipe"
+                    onView={() => setViewingRecipe(item)}
+                    onDismiss={() => handleDismissRecipe(item)}
+                    dismissing={dismissingRecipeId === item.share.id}
+                    onPrimary={() => handleSaveSharedRecipe(item)}
+                    primaryDisabled={
+                      !!item.share.savedCopyId ||
+                      savingRecipeId === item.share.id ||
+                      dismissingRecipeId === item.share.id
+                    }
+                    primaryDone={!!item.share.savedCopyId}
+                    primaryLoading={savingRecipeId === item.share.id}
+                    primaryDoneLabel="Already saved"
+                    primaryActionLabel="Save to my library"
+                    primaryIconClass="fa-bookmark"
+                  />
                 }
               />
             ))}
@@ -267,6 +414,7 @@ export default function SharedWithMePage() {
               return (
                 <CatalogRow
                   key={item.share.id}
+                  isNew={isNew(item.share.createdAt)}
                   icon={icon}
                   iconBg="#ecfdf5"
                   iconColor="#134e4b"
@@ -274,20 +422,23 @@ export default function SharedWithMePage() {
                   subtitle={`Shared by ${item.share.ownerDisplayName} · ${item.activity.activityType}`}
                   onView={() => setViewingActivity(item)}
                   actions={
-                    <>
-                      <ZoneButton onClick={() => setViewingActivity(item)}>View</ZoneButton>
-                      <ZoneButton
-                        variant="primary"
-                        onClick={() => handleAddSharedActivity(item)}
-                        disabled={!!item.share.savedCopyId || savingActivityId === item.share.id}
-                      >
-                        {item.share.savedCopyId
-                          ? 'Already added'
-                          : savingActivityId === item.share.id
-                            ? 'Adding...'
-                            : 'Add to my log'}
-                      </ZoneButton>
-                    </>
+                    <SharedCatalogActions
+                      resourceLabel="activity"
+                      onView={() => setViewingActivity(item)}
+                      onDismiss={() => handleDismissActivity(item)}
+                      dismissing={dismissingActivityId === item.share.id}
+                      onPrimary={() => handleAddSharedActivity(item)}
+                      primaryDisabled={
+                        !!item.share.savedCopyId ||
+                        savingActivityId === item.share.id ||
+                        dismissingActivityId === item.share.id
+                      }
+                      primaryDone={!!item.share.savedCopyId}
+                      primaryLoading={savingActivityId === item.share.id}
+                      primaryDoneLabel="Already added"
+                      primaryActionLabel="Add to my log"
+                      primaryIconClass="fa-bookmark"
+                    />
                   }
                 />
               )
@@ -304,6 +455,7 @@ export default function SharedWithMePage() {
             {workouts.map((item) => (
               <CatalogRow
                 key={item.share.id}
+                isNew={isNew(item.share.createdAt)}
                 icon={item.workout.icon}
                 iconBg={item.workout.iconBg}
                 iconColor={item.workout.iconColor}
@@ -311,20 +463,23 @@ export default function SharedWithMePage() {
                 subtitle={`Shared by ${item.share.ownerDisplayName} · ${item.workout.exerciseCount} exercises`}
                 onView={() => setViewingWorkout(item)}
                 actions={
-                  <>
-                    <ZoneButton onClick={() => setViewingWorkout(item)}>View</ZoneButton>
-                    <ZoneButton
-                      variant="primary"
-                      onClick={() => handleSaveSharedWorkout(item)}
-                      disabled={!!item.share.savedCopyId || savingWorkoutId === item.share.id}
-                    >
-                      {item.share.savedCopyId
-                        ? 'Already saved'
-                        : savingWorkoutId === item.share.id
-                          ? 'Saving...'
-                          : 'Save to my library'}
-                    </ZoneButton>
-                  </>
+                  <SharedCatalogActions
+                    resourceLabel="workout"
+                    onView={() => setViewingWorkout(item)}
+                    onDismiss={() => handleDismissWorkout(item)}
+                    dismissing={dismissingWorkoutId === item.share.id}
+                    onPrimary={() => handleSaveSharedWorkout(item)}
+                    primaryDisabled={
+                      !!item.share.savedCopyId ||
+                      savingWorkoutId === item.share.id ||
+                      dismissingWorkoutId === item.share.id
+                    }
+                    primaryDone={!!item.share.savedCopyId}
+                    primaryLoading={savingWorkoutId === item.share.id}
+                    primaryDoneLabel="Already saved"
+                    primaryActionLabel="Save to my library"
+                    primaryIconClass="fa-bookmark"
+                  />
                 }
               />
             ))}
