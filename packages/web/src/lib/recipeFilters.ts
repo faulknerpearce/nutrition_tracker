@@ -62,3 +62,32 @@ export function filterAndSortRecipes(
     .filter((recipe) => recipeMatchesQuery(recipe, query))
     .sort((a, b) => compareRecipes(a, b, sort))
 }
+
+export function sortRecipesByName(recipes: RecipeSummary[]): RecipeSummary[] {
+  return [...recipes].sort((a, b) => compareRecipes(a, b, 'name-asc'))
+}
+
+/** Alphabetical picker list with prefix matches ranked above substring matches. */
+export function filterRecipesForPicker(recipes: RecipeSummary[], query: string): RecipeSummary[] {
+  const sorted = sortRecipesByName(recipes)
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return sorted
+
+  const prefixMatches: RecipeSummary[] = []
+  const substringMatches: RecipeSummary[] = []
+
+  for (const recipe of sorted) {
+    const name = recipe.name.toLowerCase()
+    if (name.startsWith(normalized)) {
+      prefixMatches.push(recipe)
+    } else if (name.includes(normalized)) {
+      substringMatches.push(recipe)
+    }
+  }
+
+  return [...prefixMatches, ...substringMatches]
+}
+
+export function recipeOptionLabel(recipe: RecipeSummary): string {
+  return `${recipe.name} (${recipe.perServingTotals.calories} kcal/serving)`
+}

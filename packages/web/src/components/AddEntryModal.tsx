@@ -15,7 +15,9 @@ import {
   type RecipeSummary,
 } from '@nutrition-tracker/shared'
 import { focusIfDesktop } from '../lib/device'
+import { sortRecipesByName } from '../lib/recipeFilters'
 import { fetchRecipeSummaries } from '../lib/recipes'
+import RecipeCombobox from './RecipeCombobox'
 import { inputBase, labelBase } from '../lib/styles'
 import Modal from './Modal'
 
@@ -317,11 +319,12 @@ export default function AddEntryModal({
     if (isEdit || mode !== 'recipe') return
     fetchRecipeSummaries()
       .then((data) => {
-        setRecipes(data)
+        const sortedRecipes = sortRecipesByName(data)
+        setRecipes(sortedRecipes)
         setSelectedRecipeId((current) => {
-          const nextRecipeId = current || data[0]?.id || ''
+          const nextRecipeId = current || sortedRecipes[0]?.id || ''
           setRecipeServingWeightGrams(
-            servingWeightForRecipe(data.find((recipe) => recipe.id === nextRecipeId)),
+            servingWeightForRecipe(sortedRecipes.find((recipe) => recipe.id === nextRecipeId)),
           )
           return nextRecipeId
         })
@@ -445,7 +448,11 @@ export default function AddEntryModal({
 
     const portionQuantityValue = Number.parseFloat(recipePortionQuantity)
     if (!Number.isFinite(portionQuantityValue) || portionQuantityValue <= 0) {
-      setError(recipePortionUnit === 'grams' ? 'Weight must be greater than 0' : 'Servings must be greater than 0')
+      setError(
+        recipePortionUnit === 'grams'
+          ? 'Weight must be greater than 0'
+          : 'Servings must be greater than 0',
+      )
       return
     }
 
@@ -462,7 +469,9 @@ export default function AddEntryModal({
         portionUnit: recipePortionUnit,
         portionQuantity: portionQuantityValue,
         servingWeightGrams:
-          recipePortionUnit === 'grams' ? resolvedRecipeServingWeightGrams ?? undefined : undefined,
+          recipePortionUnit === 'grams'
+            ? (resolvedRecipeServingWeightGrams ?? undefined)
+            : undefined,
         loggedAt: loggedAt.value,
       })
       close()
@@ -475,130 +484,381 @@ export default function AddEntryModal({
 
   return (
     <Modal titleId="entry-form-title" onClose={close}>
-        <h3
-          id="entry-form-title"
+      <h3
+        id="entry-form-title"
+        style={{
+          fontFamily: "'Space Grotesk','Inter',sans-serif",
+          fontSize: 22,
+          fontWeight: 600,
+          margin: '0 0 4px 0',
+        }}
+      >
+        {isEdit ? 'Edit Entry' : 'Add Entry'}
+      </h3>
+      <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
+        {isEdit
+          ? 'Update this food item, including when you ate it, its icon, and nutrition values.'
+          : isScanned
+            ? 'Review the scanned product, set how many servings you had, and adjust nutrition values if needed.'
+            : "Log a new food item to today's entries."}
+      </p>
+
+      {!isEdit && onLogRecipe && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          {(['manual', 'recipe'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setMode(value)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 9999,
+                border: mode === value ? '1px solid #134e4b' : '1px solid #e4e4e7',
+                background: mode === value ? '#134e4b' : 'white',
+                color: mode === value ? 'white' : '#52525b',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {value === 'manual' ? 'Manual' : 'From Recipe'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <div
+          role="alert"
           style={{
-            fontFamily: "'Space Grotesk','Inter',sans-serif",
-            fontSize: 22,
-            fontWeight: 600,
-            margin: '0 0 4px 0',
+            marginBottom: 16,
+            padding: '10px 14px',
+            background: '#fee2e2',
+            color: '#991b1b',
+            borderRadius: 12,
+            fontSize: 13,
           }}
         >
-          {isEdit ? 'Edit Entry' : 'Add Entry'}
-        </h3>
-        <p style={{ fontSize: 13, color: '#71717a', margin: '0 0 24px 0' }}>
-          {isEdit
-            ? 'Update this food item, including when you ate it, its icon, and nutrition values.'
-            : isScanned
-              ? 'Review the scanned product, set how many servings you had, and adjust nutrition values if needed.'
-              : "Log a new food item to today's entries."}
-        </p>
+          {error}
+        </div>
+      )}
 
-        {!isEdit && onLogRecipe && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            {(['manual', 'recipe'] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setMode(value)}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: 9999,
-                  border: mode === value ? '1px solid #134e4b' : '1px solid #e4e4e7',
-                  background: mode === value ? '#134e4b' : 'white',
-                  color: mode === value ? 'white' : '#52525b',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
-              >
-                {value === 'manual' ? 'Manual' : 'From Recipe'}
-              </button>
-            ))}
+      {!isEdit && mode === 'recipe' ? (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <RecipeCombobox
+              id="entry-recipe"
+              label="Saved recipe"
+              recipes={recipes}
+              value={selectedRecipeId}
+              onChange={(recipeId) => selectRecipe(recipeId)}
+            />
           </div>
-        )}
-
-        {error && (
-          <div
-            role="alert"
-            style={{
-              marginBottom: 16,
-              padding: '10px 14px',
-              background: '#fee2e2',
-              color: '#991b1b',
-              borderRadius: 12,
-              fontSize: 13,
-            }}
-          >
-            {error}
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-recipe-log-time" style={labelBase}>
+              Log time
+            </label>
+            <input
+              id="entry-recipe-log-time"
+              type="time"
+              value={recipeLogTime}
+              onChange={(e) => setRecipeLogTime(e.target.value)}
+              style={inputBase}
+            />
           </div>
-        )}
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-recipe-reference-weight" style={labelBase}>
+              Reference weight (g)
+            </label>
+            <input
+              id="entry-recipe-reference-weight"
+              type="number"
+              min="1"
+              step="1"
+              value={recipeServingWeightGrams}
+              onChange={(e) => setRecipeServingWeightGrams(e.target.value)}
+              style={inputBase}
+            />
+            <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+              One serving of this recipe equals this weight (
+              {selectedRecipe?.perServingTotals.calories ?? 0} kcal per serving).
+            </p>
+          </div>
+          <PortionAmountFields
+            portionUnit={recipePortionUnit}
+            onPortionUnitChange={setRecipePortionUnit}
+            portionQuantity={recipePortionQuantity}
+            onPortionQuantityChange={setRecipePortionQuantity}
+            referenceWeightGrams={recipeServingWeightGrams}
+            quantityInputId="entry-recipe-portion"
+          />
+          {previewTotals && (
+            <div
+              style={{
+                marginBottom: 24,
+                padding: 16,
+                borderRadius: 16,
+                background: '#ecfdf5',
+                color: '#065f46',
+                fontSize: 13,
+              }}
+            >
+              This log will add {previewTotals.calories} kcal, {previewTotals.protein}g protein,{' '}
+              {previewTotals.carbs}g carbs.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={close}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 9999,
+                border: '1px solid #e4e4e7',
+                background: 'white',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                color: '#52525b',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submitRecipe}
+              disabled={adding || recipes.length === 0}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 9999,
+                border: 'none',
+                background: adding || recipes.length === 0 ? '#6b7280' : '#134e4b',
+                color: 'white',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {adding ? 'Logging...' : 'Log Recipe'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ marginBottom: 20 }}>
+            <label htmlFor="entry-icon" style={labelBase}>
+              Icon
+            </label>
+            <div
+              id="entry-icon"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 8,
+                maxHeight: 180,
+                overflowY: 'auto',
+                padding: 2,
+              }}
+            >
+              {iconOptions.map((opt) => (
+                <button
+                  key={opt.icon}
+                  type="button"
+                  aria-label={opt.label}
+                  aria-pressed={selectedIcon.icon === opt.icon}
+                  onClick={() => setSelectedIcon(opt)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    border:
+                      selectedIcon.icon === opt.icon
+                        ? '2px solid #134e4b'
+                        : '2px solid transparent',
+                    background: opt.bg,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i
+                    className={`fa-solid ${opt.icon}`}
+                    style={{ color: opt.color, fontSize: 18 }}
+                  ></i>
+                </button>
+              ))}
+            </div>
+          </div>
 
-        {!isEdit && mode === 'recipe' ? (
-          <>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-name" style={labelBase}>
+              Name
+            </label>
+            <input
+              id="entry-name"
+              ref={nameRef}
+              value={form.name}
+              onChange={(e) => update('name', e.target.value)}
+              placeholder="e.g. Grilled Chicken"
+              style={inputBase}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-description" style={labelBase}>
+              Description
+            </label>
+            <input
+              id="entry-description"
+              value={form.description}
+              onChange={(e) => update('description', e.target.value)}
+              placeholder="e.g. Lunch"
+              style={inputBase}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-log-time" style={labelBase}>
+              Log time
+            </label>
+            <input
+              id="entry-log-time"
+              type="time"
+              value={form.logTime}
+              onChange={(e) => update('logTime', e.target.value)}
+              style={inputBase}
+            />
+            <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+              When you ate this meal. Used for the Eating Times chart.
+            </p>
+          </div>
+
+          {!isEdit && (
             <div style={{ marginBottom: 16 }}>
-              <label htmlFor="entry-recipe" style={labelBase}>
-                Saved recipe
-              </label>
-              <select
-                id="entry-recipe"
-                value={selectedRecipeId}
-                onChange={(e) => selectRecipe(e.target.value)}
-                style={{ ...inputBase, paddingRight: 12 }}
-              >
-                {recipes.length === 0 ? (
-                  <option value="">No recipes yet</option>
-                ) : (
-                  recipes.map((recipe) => (
-                    <option key={recipe.id} value={recipe.id}>
-                      {recipe.name} ({recipe.perServingTotals.calories} kcal/serving)
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label htmlFor="entry-recipe-log-time" style={labelBase}>
-                Log time
-              </label>
-              <input
-                id="entry-recipe-log-time"
-                type="time"
-                value={recipeLogTime}
-                onChange={(e) => setRecipeLogTime(e.target.value)}
-                style={inputBase}
-              />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label htmlFor="entry-recipe-reference-weight" style={labelBase}>
+              <label htmlFor="entry-reference-weight" style={labelBase}>
                 Reference weight (g)
               </label>
               <input
-                id="entry-recipe-reference-weight"
+                id="entry-reference-weight"
                 type="number"
                 min="1"
                 step="1"
-                value={recipeServingWeightGrams}
-                onChange={(e) => setRecipeServingWeightGrams(e.target.value)}
+                value={referenceWeightGrams}
+                onChange={(e) => setReferenceWeightGrams(e.target.value)}
                 style={inputBase}
               />
               <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
-                One serving of this recipe equals this weight ({selectedRecipe?.perServingTotals.calories ?? 0}{' '}
-                kcal per serving).
+                Nutrition values below are for this amount of food.
+                {nutritionBasisNote ? ` ${nutritionBasisNote}.` : ''}
               </p>
             </div>
+          )}
+
+          <div className="modal-form-grid" style={{ marginBottom: 24 }}>
+            <div>
+              <label htmlFor="entry-calories" style={labelBase}>
+                {isEdit ? 'Calories' : `Calories (per ${referenceWeightGrams || '…'}g)`}
+              </label>
+              <input
+                id="entry-calories"
+                type="number"
+                min="0"
+                value={form.calories}
+                onChange={(e) => update('calories', e.target.value)}
+                placeholder="0"
+                style={inputBase}
+              />
+            </div>
+            <div>
+              <label htmlFor="entry-protein" style={labelBase}>
+                Protein (g)
+              </label>
+              <input
+                id="entry-protein"
+                type="number"
+                min="0"
+                value={form.protein}
+                onChange={(e) => update('protein', e.target.value)}
+                placeholder="0"
+                style={inputBase}
+              />
+            </div>
+            <div>
+              <label htmlFor="entry-carbs" style={labelBase}>
+                Carbs (g)
+              </label>
+              <input
+                id="entry-carbs"
+                type="number"
+                min="0"
+                value={form.carbs}
+                onChange={(e) => update('carbs', e.target.value)}
+                placeholder="0"
+                style={inputBase}
+              />
+            </div>
+            <div>
+              <label htmlFor="entry-fat" style={labelBase}>
+                Fat (g)
+              </label>
+              <input
+                id="entry-fat"
+                type="number"
+                min="0"
+                value={form.fat}
+                onChange={(e) => update('fat', e.target.value)}
+                placeholder="0"
+                style={inputBase}
+              />
+            </div>
+            <div>
+              <label htmlFor="entry-fiber" style={labelBase}>
+                Fiber (g)
+              </label>
+              <input
+                id="entry-fiber"
+                type="number"
+                min="0"
+                value={form.fiber}
+                onChange={(e) => update('fiber', e.target.value)}
+                placeholder="0"
+                style={inputBase}
+              />
+            </div>
+            <div>
+              <label htmlFor="entry-caffeine" style={labelBase}>
+                Caffeine (mg)
+              </label>
+              <input
+                id="entry-caffeine"
+                type="number"
+                min="0"
+                value={form.caffeine}
+                onChange={(e) => update('caffeine', e.target.value)}
+                placeholder="0"
+                style={inputBase}
+              />
+            </div>
+          </div>
+
+          {!isEdit && (
             <PortionAmountFields
-              portionUnit={recipePortionUnit}
-              onPortionUnitChange={setRecipePortionUnit}
-              portionQuantity={recipePortionQuantity}
-              onPortionQuantityChange={setRecipePortionQuantity}
-              referenceWeightGrams={recipeServingWeightGrams}
-              quantityInputId="entry-recipe-portion"
+              portionUnit={portionUnit}
+              onPortionUnitChange={setPortionUnit}
+              portionQuantity={portionQuantity}
+              onPortionQuantityChange={setPortionQuantity}
+              referenceWeightGrams={referenceWeightGrams}
+              quantityInputId="entry-portion-quantity"
             />
-            {previewTotals && (
+          )}
+
+          {!isEdit &&
+            entryPreviewTotals &&
+            portionQuantityNum !== (portionUnit === 'servings' ? 1 : referenceWeightNum) && (
               <div
                 style={{
-                  marginBottom: 24,
+                  marginBottom: 16,
                   padding: 16,
                   borderRadius: 16,
                   background: '#ecfdf5',
@@ -606,327 +866,74 @@ export default function AddEntryModal({
                   fontSize: 13,
                 }}
               >
-                This log will add {previewTotals.calories} kcal, {previewTotals.protein}g protein,{' '}
-                {previewTotals.carbs}g carbs.
+                This log will add {entryPreviewTotals.calories} kcal, {entryPreviewTotals.protein}g
+                protein, {entryPreviewTotals.carbs}g carbs.
               </div>
             )}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={close}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 9999,
-                  border: '1px solid #e4e4e7',
-                  background: 'white',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  color: '#52525b',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={submitRecipe}
-                disabled={adding || recipes.length === 0}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 9999,
-                  border: 'none',
-                  background: adding || recipes.length === 0 ? '#6b7280' : '#134e4b',
-                  color: 'white',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
-              >
-                {adding ? 'Logging...' : 'Log Recipe'}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-        <div style={{ marginBottom: 20 }}>
-          <label htmlFor="entry-icon" style={labelBase}>
-            Icon
-          </label>
-          <div
-            id="entry-icon"
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              maxHeight: 180,
-              overflowY: 'auto',
-              padding: 2,
-            }}
-          >
-            {iconOptions.map((opt) => (
-              <button
-                key={opt.icon}
-                type="button"
-                aria-label={opt.label}
-                aria-pressed={selectedIcon.icon === opt.icon}
-                onClick={() => setSelectedIcon(opt)}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  border:
-                    selectedIcon.icon === opt.icon ? '2px solid #134e4b' : '2px solid transparent',
-                  background: opt.bg,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <i
-                  className={`fa-solid ${opt.icon}`}
-                  style={{ color: opt.color, fontSize: 18 }}
-                ></i>
-              </button>
-            ))}
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="entry-name" style={labelBase}>
-            Name
-          </label>
-          <input
-            id="entry-name"
-            ref={nameRef}
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
-            placeholder="e.g. Grilled Chicken"
-            style={inputBase}
-          />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="entry-description" style={labelBase}>
-            Description
-          </label>
-          <input
-            id="entry-description"
-            value={form.description}
-            onChange={(e) => update('description', e.target.value)}
-            placeholder="e.g. Lunch"
-            style={inputBase}
-          />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="entry-log-time" style={labelBase}>
-            Log time
-          </label>
-          <input
-            id="entry-log-time"
-            type="time"
-            value={form.logTime}
-            onChange={(e) => update('logTime', e.target.value)}
-            style={inputBase}
-          />
-          <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
-            When you ate this meal. Used for the Eating Times chart.
-          </p>
-        </div>
-
-        {!isEdit && (
-          <div style={{ marginBottom: 16 }}>
-            <label htmlFor="entry-reference-weight" style={labelBase}>
-              Reference weight (g)
+          {!isEdit && (
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 24,
+                fontSize: 13,
+                color: '#52525b',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={saveAsRecipe}
+                onChange={(e) => setSaveAsRecipe(e.target.checked)}
+              />
+              Save as recipe for quick logging later
             </label>
-            <input
-              id="entry-reference-weight"
-              type="number"
-              min="1"
-              step="1"
-              value={referenceWeightGrams}
-              onChange={(e) => setReferenceWeightGrams(e.target.value)}
-              style={inputBase}
-            />
-            <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
-              Nutrition values below are for this amount of food.
-              {nutritionBasisNote ? ` ${nutritionBasisNote}.` : ''}
-            </p>
-          </div>
-        )}
+          )}
 
-        <div className="modal-form-grid" style={{ marginBottom: 24 }}>
-          <div>
-            <label htmlFor="entry-calories" style={labelBase}>
-              {isEdit ? 'Calories' : `Calories (per ${referenceWeightGrams || '…'}g)`}
-            </label>
-            <input
-              id="entry-calories"
-              type="number"
-              min="0"
-              value={form.calories}
-              onChange={(e) => update('calories', e.target.value)}
-              placeholder="0"
-              style={inputBase}
-            />
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={close}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 9999,
+                border: '1px solid #e4e4e7',
+                background: 'white',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                color: '#52525b',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={adding}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 9999,
+                border: 'none',
+                background: adding ? '#6b7280' : '#134e4b',
+                color: 'white',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {adding
+                ? isEdit
+                  ? 'Saving...'
+                  : 'Adding...'
+                : isEdit
+                  ? 'Save Changes'
+                  : 'Add Entry'}
+            </button>
           </div>
-          <div>
-            <label htmlFor="entry-protein" style={labelBase}>
-              Protein (g)
-            </label>
-            <input
-              id="entry-protein"
-              type="number"
-              min="0"
-              value={form.protein}
-              onChange={(e) => update('protein', e.target.value)}
-              placeholder="0"
-              style={inputBase}
-            />
-          </div>
-          <div>
-            <label htmlFor="entry-carbs" style={labelBase}>
-              Carbs (g)
-            </label>
-            <input
-              id="entry-carbs"
-              type="number"
-              min="0"
-              value={form.carbs}
-              onChange={(e) => update('carbs', e.target.value)}
-              placeholder="0"
-              style={inputBase}
-            />
-          </div>
-          <div>
-            <label htmlFor="entry-fat" style={labelBase}>
-              Fat (g)
-            </label>
-            <input
-              id="entry-fat"
-              type="number"
-              min="0"
-              value={form.fat}
-              onChange={(e) => update('fat', e.target.value)}
-              placeholder="0"
-              style={inputBase}
-            />
-          </div>
-          <div>
-            <label htmlFor="entry-fiber" style={labelBase}>
-              Fiber (g)
-            </label>
-            <input
-              id="entry-fiber"
-              type="number"
-              min="0"
-              value={form.fiber}
-              onChange={(e) => update('fiber', e.target.value)}
-              placeholder="0"
-              style={inputBase}
-            />
-          </div>
-          <div>
-            <label htmlFor="entry-caffeine" style={labelBase}>
-              Caffeine (mg)
-            </label>
-            <input
-              id="entry-caffeine"
-              type="number"
-              min="0"
-              value={form.caffeine}
-              onChange={(e) => update('caffeine', e.target.value)}
-              placeholder="0"
-              style={inputBase}
-            />
-          </div>
-        </div>
-
-        {!isEdit && (
-          <PortionAmountFields
-            portionUnit={portionUnit}
-            onPortionUnitChange={setPortionUnit}
-            portionQuantity={portionQuantity}
-            onPortionQuantityChange={setPortionQuantity}
-            referenceWeightGrams={referenceWeightGrams}
-            quantityInputId="entry-portion-quantity"
-          />
-        )}
-
-        {!isEdit && entryPreviewTotals && portionQuantityNum !== (portionUnit === 'servings' ? 1 : referenceWeightNum) && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 16,
-              borderRadius: 16,
-              background: '#ecfdf5',
-              color: '#065f46',
-              fontSize: 13,
-            }}
-          >
-            This log will add {entryPreviewTotals.calories} kcal, {entryPreviewTotals.protein}g
-            protein, {entryPreviewTotals.carbs}g carbs.
-          </div>
-        )}
-
-        {!isEdit && (
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 24,
-              fontSize: 13,
-              color: '#52525b',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={saveAsRecipe}
-              onChange={(e) => setSaveAsRecipe(e.target.checked)}
-            />
-            Save as recipe for quick logging later
-          </label>
-        )}
-
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={close}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 9999,
-              border: '1px solid #e4e4e7',
-              background: 'white',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-              color: '#52525b',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={adding}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 9999,
-              border: 'none',
-              background: adding ? '#6b7280' : '#134e4b',
-              color: 'white',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            {adding ? (isEdit ? 'Saving...' : 'Adding...') : isEdit ? 'Save Changes' : 'Add Entry'}
-          </button>
-        </div>
-          </>
-        )}
+        </>
+      )}
     </Modal>
   )
 }

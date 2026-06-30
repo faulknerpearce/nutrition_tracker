@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { RecipeSummary } from '@nutrition-tracker/shared'
-import { filterAndSortRecipes, recipeMatchesQuery } from '../lib/recipeFilters'
+import {
+  filterAndSortRecipes,
+  filterRecipesForPicker,
+  recipeMatchesQuery,
+  recipeOptionLabel,
+  sortRecipesByName,
+} from '../lib/recipeFilters'
 
 const emptyTotals = {
   calories: 0,
@@ -72,5 +78,57 @@ describe('filterAndSortRecipes', () => {
   it('sorts by ingredient count ascending', () => {
     const result = filterAndSortRecipes(items, '', 'ingredients-asc')
     expect(result.map((item) => item.ingredientCount)).toEqual([2, 4, 6])
+  })
+})
+
+describe('sortRecipesByName', () => {
+  it('returns recipes in case-insensitive alphabetical order', () => {
+    const items = [
+      recipe({ id: '1', name: 'Zucchini Bowl' }),
+      recipe({ id: '2', name: 'apple crisp' }),
+      recipe({ id: '3', name: 'Mango Shake' }),
+    ]
+
+    expect(sortRecipesByName(items).map((item) => item.name)).toEqual([
+      'apple crisp',
+      'Mango Shake',
+      'Zucchini Bowl',
+    ])
+  })
+})
+
+describe('filterRecipesForPicker', () => {
+  const items = [
+    recipe({ id: '1', name: 'Apple Crisp' }),
+    recipe({ id: '2', name: 'Apricot Bowl' }),
+    recipe({ id: '3', name: 'Banana Tart' }),
+  ]
+
+  it('returns all recipes alphabetically when the query is empty', () => {
+    expect(filterRecipesForPicker(items, '').map((item) => item.name)).toEqual([
+      'Apple Crisp',
+      'Apricot Bowl',
+      'Banana Tart',
+    ])
+  })
+
+  it('ranks prefix matches ahead of substring matches', () => {
+    expect(filterRecipesForPicker(items, 'a').map((item) => item.name)).toEqual([
+      'Apple Crisp',
+      'Apricot Bowl',
+      'Banana Tart',
+    ])
+  })
+})
+
+describe('recipeOptionLabel', () => {
+  it('includes calories per serving', () => {
+    const item = recipe({
+      id: '1',
+      name: 'Overnight Oats',
+      perServingTotals: { ...emptyTotals, calories: 420 },
+    })
+
+    expect(recipeOptionLabel(item)).toBe('Overnight Oats (420 kcal/serving)')
   })
 })
