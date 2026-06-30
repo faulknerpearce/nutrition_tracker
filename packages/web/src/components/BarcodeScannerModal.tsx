@@ -47,7 +47,9 @@ export default function BarcodeScannerModal({
   const [lookingUp, setLookingUp] = useState(false)
   const [manualBarcode, setManualBarcode] = useState('')
 
-  onProductFoundRef.current = onProductFound
+  useEffect(() => {
+    onProductFoundRef.current = onProductFound
+  })
 
   const stopCamera = () => {
     controlsRef.current?.stop()

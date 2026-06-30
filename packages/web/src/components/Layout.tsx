@@ -26,42 +26,36 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
   const { user, signOut } = useAuth()
   const profileContext = useProfileOptional()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [newShareCount, setNewShareCount] = useState(0)
+  const [fetchedShareCount, setFetchedShareCount] = useState(0)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const activeNav = primaryNavRoute(activeRoute)
   const zone = routeZone(activeRoute)
   const layoutBg = zone === 'profile' ? zoneTokens.profile.bg : zoneTokens[activeNav === 'dashboard' ? 'dashboard' : activeNav].bg
 
   const displayLabel =
-    profileContext?.profile.displayName ??
-    (user?.user_metadata?.display_name as string | undefined) ??
-    user?.email ??
-    'Account'
+    profileContext && !profileContext.loading
+      ? profileContext.profile.displayName
+      : (user?.email?.split('@')[0] ?? 'Account')
+
+  const trackSharedNotifications = Boolean(user) && activeRoute !== 'shared'
+  const newShareCount = trackSharedNotifications ? fetchedShareCount : 0
 
   useEffect(() => {
-    if (!user) {
-      setNewShareCount(0)
-      return
-    }
-
-    if (activeRoute === 'shared') {
-      setNewShareCount(0)
-      return
-    }
+    if (!trackSharedNotifications) return
 
     let cancelled = false
     void fetchNewSharedCount()
       .then((count) => {
-        if (!cancelled) setNewShareCount(count)
+        if (!cancelled) setFetchedShareCount(count)
       })
       .catch(() => {
-        if (!cancelled) setNewShareCount(0)
+        if (!cancelled) setFetchedShareCount(0)
       })
 
     return () => {
       cancelled = true
     }
-  }, [user, activeRoute])
+  }, [trackSharedNotifications, user?.id, activeRoute])
 
   useEffect(() => {
     if (!menuOpen) return

@@ -3,15 +3,10 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { AuthContext } from './auth-context'
 
-// `display_name` is stored in two places that must stay in sync:
-//   1. `auth.users.raw_user_meta_data->>'display_name'` — written here on sign-up
-//      and consumed by the `handle_new_user` SQL trigger (migration 0002) to seed
-//      `public.profiles.display_name`.
-//   2. `public.profiles.display_name` — the canonical, mutable user record.
-// For now the UI only reads from #1 (Layout.tsx greets the user from session
-// user_metadata). A future iteration should query `profiles` directly so that
-// admins / the user can update their display name without going through
-// Supabase Auth APIs.
+// Sign-up seeds `auth.users` metadata; migration 0002's `handle_new_user` trigger
+// copies that into `public.profiles.display_name`. The UI reads the profile row
+// via ProfileProvider; profile saves update `profiles` and sync metadata back
+// through `saveProfileUpdate` so both stores stay aligned.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)

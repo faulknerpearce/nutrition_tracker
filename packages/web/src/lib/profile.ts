@@ -49,5 +49,13 @@ export async function saveProfileUpdate(
     .single()
 
   if (error) throw new Error(error.message)
+
+  if (update.displayName !== undefined) {
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { display_name: update.displayName.trim() },
+    })
+    if (authError) throw new Error(authError.message)
+  }
+
   return mapProfileRow(data)
 }

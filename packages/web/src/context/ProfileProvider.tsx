@@ -28,10 +28,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }
 
   const userId = user.id
-  const fallbackDisplayName =
-    (user.user_metadata?.display_name as string | undefined) ??
-    user.email?.split('@')[0] ??
-    'Account'
+  const fallbackDisplayName = user.email?.split('@')[0] ?? 'Account'
   const [profile, setProfile] = useState<UserProfile>(FALLBACK_PROFILE)
   const [loading, setLoading] = useState(true)
 

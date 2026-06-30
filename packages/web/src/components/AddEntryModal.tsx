@@ -216,6 +216,16 @@ export default function AddEntryModal({
   const [recipePortionUnit, setRecipePortionUnit] = useState<PortionUnit>('servings')
   const [recipePortionQuantity, setRecipePortionQuantity] = useState('1')
   const [recipeServingWeightGrams, setRecipeServingWeightGrams] = useState('100')
+
+  const servingWeightForRecipe = (recipe: RecipeSummary | undefined) =>
+    recipe?.servingWeightGrams ? String(recipe.servingWeightGrams) : '100'
+
+  const selectRecipe = (recipeId: string, recipeList: RecipeSummary[] = recipes) => {
+    setSelectedRecipeId(recipeId)
+    setRecipeServingWeightGrams(
+      servingWeightForRecipe(recipeList.find((recipe) => recipe.id === recipeId)),
+    )
+  }
   const [referenceWeightGrams, setReferenceWeightGrams] = useState(() =>
     prefill?.referenceWeightGrams ? String(prefill.referenceWeightGrams) : '100',
   )
@@ -308,19 +318,18 @@ export default function AddEntryModal({
     fetchRecipeSummaries()
       .then((data) => {
         setRecipes(data)
-        setSelectedRecipeId((current) => current || data[0]?.id || '')
+        setSelectedRecipeId((current) => {
+          const nextRecipeId = current || data[0]?.id || ''
+          setRecipeServingWeightGrams(
+            servingWeightForRecipe(data.find((recipe) => recipe.id === nextRecipeId)),
+          )
+          return nextRecipeId
+        })
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load recipes')
       })
   }, [isEdit, mode])
-
-  useEffect(() => {
-    if (!selectedRecipe) return
-    setRecipeServingWeightGrams(
-      selectedRecipe.servingWeightGrams ? String(selectedRecipe.servingWeightGrams) : '100',
-    )
-  }, [selectedRecipeId, selectedRecipe?.servingWeightGrams])
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -534,7 +543,7 @@ export default function AddEntryModal({
               <select
                 id="entry-recipe"
                 value={selectedRecipeId}
-                onChange={(e) => setSelectedRecipeId(e.target.value)}
+                onChange={(e) => selectRecipe(e.target.value)}
                 style={{ ...inputBase, paddingRight: 12 }}
               >
                 {recipes.length === 0 ? (

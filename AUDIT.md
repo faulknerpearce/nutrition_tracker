@@ -61,5 +61,4 @@ single, focused change set.
 ## Open / not addressed
 
 - **Cloudflare Pages rootless-functions**: still uses the shim pattern. Removing the shim requires Cloudflare's `[build]` config and is out of scope for this pass.
-- **React component tests**: still no test infrastructure in `packages/web`. Recommend adding `vitest` + `@testing-library/react` in a follow-up PR.
-- **Multi-user display-name sync**: only `user_metadata.display_name` is read; `profiles.display_name` is set by the trigger but never queried. Documented in `AuthProvider.tsx`; should be addressed in a follow-up that reads from `profiles`.
+- **React component tests**: `packages/web` has vitest and lib-level unit tests, but no `@testing-library/react` component tests yet.

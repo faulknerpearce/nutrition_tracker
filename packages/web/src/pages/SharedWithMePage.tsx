@@ -171,14 +171,21 @@ export default function SharedWithMePage() {
   }
 
   useEffect(() => {
-    loadShared()
-      .then(() => setLoading(false))
-      .catch((err) => {
+    let cancelled = false
+
+    void (async () => {
+      try {
+        await loadShared()
+        if (!cancelled) setLoading(false)
+      } catch (err) {
+        if (cancelled) return
         setError(err instanceof Error ? err.message : 'Failed to load shared items')
         setLoading(false)
-      })
+      }
+    })()
 
     return () => {
+      cancelled = true
       markSharedAsSeen()
     }
   }, [])
