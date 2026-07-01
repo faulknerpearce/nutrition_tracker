@@ -4,6 +4,8 @@ export type NetBalanceStatus = 'under' | 'in_range' | 'over'
 
 export interface NetBalance {
   consumed: number
+  bmr: number
+  activityCalories: number
   burned: number
   net: number
   goalLow: number
@@ -16,10 +18,12 @@ export interface NetBalance {
 
 export function computeNetBalance(
   consumed: number,
-  burned: number,
+  activityCalories: number,
   goalLow: number = goals.calories.low,
   goalHigh: number = goals.calories.high,
+  bmr: number = 0,
 ): NetBalance {
+  const burned = bmr + activityCalories
   const net = consumed - burned
   let status: NetBalanceStatus = 'in_range'
   if (net < goalLow) status = 'under'
@@ -39,6 +43,8 @@ export function computeNetBalance(
 
   return {
     consumed,
+    bmr,
+    activityCalories,
     burned,
     net,
     goalLow,

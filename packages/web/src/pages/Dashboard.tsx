@@ -1,18 +1,24 @@
 import {
   computeNetBalance,
   formatDuration,
+  resolveBmr,
+  resolveTrendsDateRange,
   sumActivityTotals,
   sumTotals,
   todayISO,
+  type DailyEnergySnapshot,
+  type TrendsRangePreset,
 } from '@nutrition-tracker/shared'
-import { useEffect, useState } from 'react'
-import { useNutritionGoals } from '../context/useProfile'
+import { useEffect, useMemo, useState } from 'react'
+import { useNutritionGoals, useProfile } from '../context/useProfile'
 import { pageTitle, sectionHeader as sectionLabelStyle } from '../lib/styles'
 import ActivityOverviewPanel from '../components/dashboard/ActivityOverviewPanel'
 import EnergyOverviewPanel from '../components/dashboard/EnergyOverviewPanel'
 import NutritionRingsPanel from '../components/dashboard/NutritionRingsPanel'
+import TrendsPanel from '../components/dashboard/TrendsPanel'
 import DashboardPreviewList, { PreviewEmpty, PreviewRow } from '../components/DashboardPreviewList'
 import { fetchActivities, type Activity } from '../lib/activities'
+import { fetchDailyEnergySnapshots } from '../lib/dailyEnergy'
 import { type FoodEntry, fetchEntries } from '../lib/entries'
 import { routeHref } from '../lib/routing'
 
@@ -69,10 +75,29 @@ function SectionHeader({
 
 export default function Dashboard() {
   const nutritionGoals = useNutritionGoals()
+  const { profile } = useProfile()
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [trendsPreset, setTrendsPreset] = useState<TrendsRangePreset>('last_7')
+  const [customStart, setCustomStart] = useState(() => resolveTrendsDateRange('last_7').start)
+  const [customEnd, setCustomEnd] = useState(todayISO())
+  const [trendRows, setTrendRows] = useState<DailyEnergySnapshot[]>([])
+  const [trendsLoading, setTrendsLoading] = useState(true)
+  const [trendsError, setTrendsError] = useState<string | null>(null)
+
+  const { bmr } = useMemo(() => resolveBmr(profile), [profile])
+
+  const trendsRange = useMemo(
+    () =>
+      resolveTrendsDateRange(trendsPreset, {
+        today: todayISO(),
+        customStart,
+        customEnd,
+      }),
+    [trendsPreset, customStart, customEnd],
+  )
 
   useEffect(() => {
     Promise.all([fetchEntries(), fetchActivities()])
@@ -86,6 +111,30 @@ export default function Dashboard() {
         setLoading(false)
       })
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setTrendsLoading(true)
+    setTrendsError(null)
+
+    fetchDailyEnergySnapshots(trendsRange.start, trendsRange.end, bmr)
+      .then((rows) => {
+        if (!cancelled) setTrendRows(rows)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setTrendsError(err instanceof Error ? err.message : 'Failed to load trends')
+          setTrendRows([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setTrendsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [trendsRange.start, trendsRange.end, bmr])
 
   if (loading) {
     return (
@@ -126,6 +175,7 @@ export default function Dashboard() {
     activityTotals.calories,
     nutritionGoals.calories.low,
     nutritionGoals.calories.high,
+    bmr,
   )
   const recentEntries = entries.slice(0, 3)
   const recentActivities = activities.slice(0, 3)
@@ -143,6 +193,20 @@ export default function Dashboard() {
       <div style={{ marginBottom: 24 }}>
         <EnergyOverviewPanel balance={balance} hasActivities={activities.length > 0} />
       </div>
+
+      <section style={{ marginBottom: 40 }}>
+        <TrendsPanel
+          rows={trendRows}
+          preset={trendsPreset}
+          customStart={customStart}
+          customEnd={customEnd}
+          loading={trendsLoading}
+          error={trendsError}
+          onPresetChange={setTrendsPreset}
+          onCustomStartChange={setCustomStart}
+          onCustomEndChange={setCustomEnd}
+        />
+      </section>
 
       <section style={{ marginBottom: 40 }}>
         <SectionHeader

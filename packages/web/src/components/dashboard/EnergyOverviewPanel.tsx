@@ -3,6 +3,7 @@ import { netRingProgress } from '../../lib/dashboardCharts'
 import { cardSurface, iconTileSm, subtleSurface } from '../../lib/styles'
 import HorizontalBarChart from '../charts/HorizontalBarChart'
 import ProgressRing from '../charts/ProgressRing'
+import OutputCompositionBar from './OutputCompositionBar'
 
 interface EnergyOverviewPanelProps {
   balance: NetBalance
@@ -168,35 +169,17 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
 
 export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOverviewPanelProps) {
   const color = statusColor[balance.status]
-  const chartMax = Math.max(balance.consumed, balance.net, balance.goalHigh, 1)
+  const intakeMax = Math.max(balance.goalHigh, balance.consumed, 1)
   const ring = netRingProgress(balance)
 
-  const barRows = [
-    {
-      label: 'Consumed',
-      value: balance.consumed,
-      displayValue: `${balance.consumed.toLocaleString()} kcal`,
-      max: chartMax,
-      color: '#ea580c',
-      gradient: 'linear-gradient(90deg, #ea580c, #fb923c)',
-    },
-    {
-      label: 'Burned',
-      value: balance.burned,
-      displayValue: `${balance.burned.toLocaleString()} kcal`,
-      max: chartMax,
-      color: '#0d9488',
-      gradient: 'linear-gradient(90deg, #0d9488, #14b8a6)',
-    },
-    {
-      label: 'Net',
-      value: balance.net,
-      displayValue: `${balance.net.toLocaleString()} kcal`,
-      max: chartMax,
-      color,
-      gradient: `linear-gradient(90deg, ${color}, ${color}cc)`,
-    },
-  ]
+  const intakeRow = {
+    label: 'Intake',
+    value: balance.consumed,
+    displayValue: `${balance.consumed.toLocaleString()} kcal`,
+    max: intakeMax,
+    color: '#ea580c',
+    gradient: 'linear-gradient(90deg, #ea580c, #fb923c)',
+  }
 
   return (
     <div style={{ ...cardSurface, padding: 28 }}>
@@ -253,15 +236,15 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
                 </div>
               </div>
               <p style={{ fontSize: 13, color: '#71717a', margin: 0, lineHeight: 1.5 }}>
-                {balance.consumed.toLocaleString()} consumed · {balance.burned.toLocaleString()}{' '}
-                burned
+                {balance.consumed.toLocaleString()} intake · {balance.burned.toLocaleString()} total
+                output
               </p>
               <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
-                {balance.contextMessage}
+                BMR is included automatically in total output. {balance.contextMessage}
               </p>
               {!hasActivities && (
                 <p style={{ fontSize: 12, color: '#a1a1aa', margin: '8px 0 0 0' }}>
-                  Log an activity on Outputs to track calories burned.
+                  Log activities on Outputs to add exercise burn on top of BMR.
                 </p>
               )}
             </div>
@@ -279,9 +262,13 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
               margin: '0 0 16px 0',
             }}
           >
-            Energy breakdown
+            Today&apos;s balance
           </p>
-          <HorizontalBarChart rows={barRows} />
+          <HorizontalBarChart rows={[intakeRow]} />
+          <p style={{ fontSize: 11, color: '#a1a1aa', margin: '-4px 0 14px 0' }}>
+            Intake vs high calorie goal ({balance.goalHigh.toLocaleString()} kcal).
+          </p>
+          <OutputCompositionBar balance={balance} />
           <GoalZoneTrack balance={balance} />
         </div>
       </div>

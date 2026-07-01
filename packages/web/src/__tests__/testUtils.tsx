@@ -1,6 +1,7 @@
 import { render, type RenderOptions } from '@testing-library/react'
 import {
   DEFAULT_NUTRITION_GOALS,
+  DEFAULT_PROFILE_GENDER,
   DEFAULT_TIMEZONE,
   type UserProfile,
 } from '@nutrition-tracker/shared'
@@ -14,6 +15,8 @@ export const mockProfile: UserProfile = {
   age: 30,
   heightCm: 170,
   weightKg: 68,
+  gender: DEFAULT_PROFILE_GENDER,
+  bmrOverride: null,
   nutritionGoals: DEFAULT_NUTRITION_GOALS,
   timeZone: DEFAULT_TIMEZONE,
 }

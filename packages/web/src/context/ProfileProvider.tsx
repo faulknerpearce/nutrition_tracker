@@ -1,5 +1,6 @@
 import {
   DEFAULT_NUTRITION_GOALS,
+  DEFAULT_PROFILE_GENDER,
   DEFAULT_TIMEZONE,
   validateNutritionGoals,
   validateProfileUpdate,
@@ -17,6 +18,8 @@ const FALLBACK_PROFILE: UserProfile = {
   age: null,
   heightCm: null,
   weightKg: null,
+  gender: DEFAULT_PROFILE_GENDER,
+  bmrOverride: null,
   nutritionGoals: DEFAULT_NUTRITION_GOALS,
   timeZone: DEFAULT_TIMEZONE,
 }

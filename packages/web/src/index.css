@@ -450,6 +450,165 @@ body {
   color: #71717a;
 }
 
+.trends-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.trends-table-caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.trends-table th,
+.trends-table td {
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid #f4f4f5;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.trends-table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+.trends-table tbody th[scope='row'] {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3f3f46;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.trends-table tfoot {
+  border-top: 2px solid #134e4b;
+}
+
+.trends-table-summary th,
+.trends-table-summary td {
+  border-bottom: none;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.trends-table-summary th[scope='row'] {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trends-table-summary-total th,
+.trends-table-summary-total td {
+  background: #134e4b;
+  color: #ecfdf5;
+  font-weight: 700;
+}
+
+.trends-table-summary-total th[scope='row'] {
+  color: #ffffff;
+}
+
+.trends-table-summary-average th,
+.trends-table-summary-average td {
+  background: #d1fae5;
+  color: #134e4b;
+  font-weight: 600;
+}
+
+.trends-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.trends-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.trends-view-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9999px;
+  border: 1px solid #e4e4e7;
+  background: white;
+}
+
+.trends-view-toggle-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: #52525b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.trends-view-toggle-button-active {
+  background: #134e4b;
+  color: #ffffff;
+}
+
+.trends-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.trends-summary-card {
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.trends-summary-card-label {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trends-summary-card-value {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.trends-summary-card-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.trends-summary-card.trends-table-summary-total .trends-summary-card-meta {
+  color: #d1fae5;
+}
+
+.trends-summary-card.trends-table-summary-average .trends-summary-card-meta {
+  color: #047857;
+}
+
 .inputs-quick-actions {
   display: flex;
   align-items: center;
@@ -1056,6 +1215,96 @@ body {
 
   .net-balance-value-mobile {
     font-size: 40px !important;
+  }
+
+  .trends-mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .trends-mobile-card {
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .trends-mobile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f4f4f5;
+  }
+
+  .trends-mobile-card-date {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: #18181b;
+    margin: 0;
+  }
+
+  .trends-mobile-card-net {
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trends-mobile-card-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .trends-mobile-card-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .trends-mobile-card-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #71717a;
+    margin: 0;
+  }
+
+  .trends-mobile-card-field-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #3f3f46;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+  }
+
+  .trends-mobile-card-delta {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid #f4f4f5;
+  }
+
+  .trends-mobile-card-delta-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #71717a;
+    margin: 0;
+  }
+
+  .trends-mobile-card-delta-value {
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
   }
 }
 

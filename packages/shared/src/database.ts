@@ -559,6 +559,8 @@ export type Database = {
           age: number | null
           height_cm: number | null
           weight_kg: number | null
+          gender: string
+          bmr_override: number | null
           time_zone: string
           created_at: string
         }
@@ -569,6 +571,8 @@ export type Database = {
           age?: number | null
           height_cm?: number | null
           weight_kg?: number | null
+          gender?: string
+          bmr_override?: number | null
           time_zone?: string
           created_at?: string
         }
@@ -579,6 +583,8 @@ export type Database = {
           age?: number | null
           height_cm?: number | null
           weight_kg?: number | null
+          gender?: string
+          bmr_override?: number | null
           time_zone?: string
           created_at?: string
         }

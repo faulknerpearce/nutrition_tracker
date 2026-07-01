@@ -23,6 +23,8 @@ describe('mapProfileRow', () => {
       age: 32,
       heightCm: 180,
       weightKg: 78.5,
+      gender: 'female',
+      bmrOverride: null,
       timeZone: DEFAULT_TIMEZONE,
     })
   })

@@ -59,6 +59,19 @@ export function shiftISODate(iso: string, deltaDays: number): string {
   return todayISO(date)
 }
 
+/** Inclusive list of ISO dates from `startIso` through `endIso`. */
+export function listDatesInRange(startIso: string, endIso: string): string[] {
+  const start = startIso <= endIso ? startIso : endIso
+  const end = startIso <= endIso ? endIso : startIso
+  const dates: string[] = []
+  let cursor = start
+  while (cursor <= end) {
+    dates.push(cursor)
+    cursor = shiftISODate(cursor, 1)
+  }
+  return dates
+}
+
 function resolveTodayISO(options?: { now?: Date; timeZone?: string }): string {
   if (options?.timeZone) {
     return todayISOInTimeZone(options.timeZone, options.now)

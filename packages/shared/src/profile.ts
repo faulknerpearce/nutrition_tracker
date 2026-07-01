@@ -1,6 +1,9 @@
+import { parseProfileGender, type ProfileGender } from './bmr.js'
 import { DEFAULT_TIMEZONE, isValidTimeZone } from './dateUtils.js'
 import { parseNutritionGoals, type NutritionGoals } from './goals.js'
 import type { ValidationResult } from './validation.js'
+
+export type { ProfileGender } from './bmr.js'
 
 export interface UserBodyStats {
   age: number | null
@@ -11,6 +14,8 @@ export interface UserBodyStats {
 export interface UserProfile extends UserBodyStats {
   displayName: string
   nutritionGoals: NutritionGoals
+  gender: ProfileGender
+  bmrOverride: number | null
   /** IANA timezone used for calendar-day food and activity logs. */
   timeZone: string
 }
@@ -20,6 +25,8 @@ export interface ProfileUpdate {
   age?: number | null
   heightCm?: number | null
   weightKg?: number | null
+  gender?: ProfileGender
+  bmrOverride?: number | null
   nutritionGoals?: NutritionGoals
   timeZone?: string
 }
@@ -45,12 +52,21 @@ function parseTimeZone(raw: unknown): string {
   return DEFAULT_TIMEZONE
 }
 
+function parseOptionalBmrOverride(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === '') return null
+  const value = typeof raw === 'number' ? raw : Number.parseFloat(String(raw))
+  if (!Number.isFinite(value)) return null
+  return Math.round(value)
+}
+
 export function mapProfileRow(row: {
   display_name: string
   nutrition_goals: unknown
   age?: number | null
   height_cm?: number | null
   weight_kg?: number | string | null
+  gender?: string | null
+  bmr_override?: number | string | null
   time_zone?: string | null
 }): UserProfile {
   const weightRaw = row.weight_kg
@@ -67,6 +83,8 @@ export function mapProfileRow(row: {
     age: row.age ?? null,
     heightCm: row.height_cm ?? null,
     weightKg: Number.isFinite(weightKg) ? weightKg : null,
+    gender: parseProfileGender(row.gender),
+    bmrOverride: parseOptionalBmrOverride(row.bmr_override),
     timeZone: parseTimeZone(row.time_zone),
   }
 }
@@ -122,6 +140,16 @@ export function validateProfileUpdate(input: ProfileUpdate): ValidationResult<Pr
     }
   }
 
+  if (input.gender !== undefined && !['male', 'female', 'prefer_not_to_say'].includes(input.gender)) {
+    return { ok: false, error: 'Gender must be male, female, or prefer_not_to_say' }
+  }
+
+  if (input.bmrOverride !== undefined && input.bmrOverride !== null) {
+    if (!Number.isFinite(input.bmrOverride) || input.bmrOverride < 800 || input.bmrOverride > 5000) {
+      return { ok: false, error: 'BMR override must be between 800 and 5000 kcal' }
+    }
+  }
+
   if (input.timeZone !== undefined && !isValidTimeZone(input.timeZone)) {
     return { ok: false, error: 'timeZone must be a valid IANA timezone' }
   }
@@ -142,6 +170,8 @@ export function buildProfileUpdatePayload(input: ProfileUpdate): {
   age?: number | null
   height_cm?: number | null
   weight_kg?: number | null
+  gender?: ProfileGender
+  bmr_override?: number | null
   nutrition_goals?: NutritionGoals
   time_zone?: string
 } {
@@ -150,6 +180,8 @@ export function buildProfileUpdatePayload(input: ProfileUpdate): {
     age?: number | null
     height_cm?: number | null
     weight_kg?: number | null
+    gender?: ProfileGender
+    bmr_override?: number | null
     nutrition_goals?: NutritionGoals
     time_zone?: string
   } = {}
@@ -160,6 +192,8 @@ export function buildProfileUpdatePayload(input: ProfileUpdate): {
   if (input.age !== undefined) payload.age = input.age
   if (input.heightCm !== undefined) payload.height_cm = input.heightCm
   if (input.weightKg !== undefined) payload.weight_kg = input.weightKg
+  if (input.gender !== undefined) payload.gender = input.gender
+  if (input.bmrOverride !== undefined) payload.bmr_override = input.bmrOverride
   if (input.nutritionGoals !== undefined) payload.nutrition_goals = input.nutritionGoals
   if (input.timeZone !== undefined) payload.time_zone = input.timeZone
 
@@ -178,6 +212,9 @@ export function mergeProfileRow(
     age: row.age === undefined ? current.age : (row.age as number | null),
     height_cm: row.height_cm === undefined ? current.heightCm : (row.height_cm as number | null),
     weight_kg: row.weight_kg === undefined ? current.weightKg : (row.weight_kg as number | null),
+    gender: row.gender === undefined ? current.gender : parseProfileGender(row.gender),
+    bmr_override:
+      row.bmr_override === undefined ? current.bmrOverride : parseOptionalBmrOverride(row.bmr_override),
     time_zone:
       row.time_zone === undefined || row.time_zone === null
         ? current.timeZone
