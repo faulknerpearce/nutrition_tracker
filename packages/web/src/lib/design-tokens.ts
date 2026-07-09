@@ -1,16 +1,15 @@
 export type ZoneId = 'dashboard' | 'inputs' | 'outputs' | 'profile'
 
 /**
- * Zone accents — matched to Outputs coral (#E86A3C) for equal vividness.
- * Tuned for similar perceived luminance (~0.28) and high saturation so
- * green/blue feel as punchy as coral without looking washed or neon.
+ * Zone accents — Outputs is a red-orange burn color; Inputs green and Dashboard blue
+ * stay in a similar vividness family.
  */
-export const ZONE_CORAL = '#E86A3C'
+export const ZONE_CORAL = '#EA4E2E'
 export const ZONE_GREEN = '#13A561'
 export const ZONE_BLUE = '#568FEB'
 
 /** Darker companions for eyebrows / strong labels (same hue family). */
-export const ZONE_CORAL_DEEP = '#C45A2A'
+export const ZONE_CORAL_DEEP = '#C43A1F'
 export const ZONE_GREEN_DEEP = '#0E7A48'
 export const ZONE_BLUE_DEEP = '#2B5FCF'
 
