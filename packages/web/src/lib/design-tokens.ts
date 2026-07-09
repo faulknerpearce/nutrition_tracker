@@ -96,7 +96,10 @@ export const atmosphere = {
   },
 } as const
 
-/** Per-zone sky gradients (top → bottom). */
+/**
+ * Per-zone sky gradients (top → bottom).
+ * Tops stay deep enough for white chrome text; bottoms soften into cream/mist.
+ */
 export const zoneGradients: Record<ZoneId, string> = {
   dashboard: `linear-gradient(
     165deg,
@@ -107,14 +110,15 @@ export const zoneGradients: Record<ZoneId, string> = {
     #FF9F5C 78%,
     #FFDB85 100%
   )`,
+  /** Clear peach sunrise — no muddy brown tops */
   inputs: `linear-gradient(
     165deg,
-    #7A6B5A 0%,
-    #C4A484 22%,
-    #E8C4A0 45%,
-    #F5D5B8 65%,
-    #FFE8D0 85%,
-    #FFF6EB 100%
+    #E86A3C 0%,
+    #FF8F5A 18%,
+    #FFB07A 38%,
+    #FFD0A8 58%,
+    #FFE8D4 80%,
+    #FFF8F2 100%
   )`,
   outputs: `linear-gradient(
     165deg,
@@ -136,6 +140,14 @@ export const zoneGradients: Record<ZoneId, string> = {
   )`,
 }
 
+/** Text that sits directly on the zone sky (not inside white cards). */
+export const onSky = {
+  text: '#FFFFFF',
+  textMuted: 'rgba(255, 255, 255, 0.86)',
+  textFaint: 'rgba(255, 255, 255, 0.72)',
+  shadow: '0 1px 2px rgba(0, 0, 0, 0.28), 0 0 18px rgba(0, 0, 0, 0.12)',
+} as const
+
 export interface ZoneTokens {
   id: ZoneId
   accent: string
@@ -145,7 +157,11 @@ export interface ZoneTokens {
   bg: string
   cardBg: string
   cardBorder: string
+  /** Eyebrow color inside white cards / chrome that sits on white. */
   eyebrow: string
+  /** Page-level labels on the sky gradient. */
+  onSky: string
+  onSkyMuted: string
 }
 
 export const zoneTokens: Record<ZoneId, ZoneTokens> = {
@@ -157,17 +173,21 @@ export const zoneTokens: Record<ZoneId, ZoneTokens> = {
     bg: zoneGradients.dashboard,
     cardBg: neutrals.surface,
     cardBorder: 'rgba(28, 28, 30, 0.06)',
-    eyebrow: '#5C4A3A',
+    eyebrow: '#8B5A3C',
+    onSky: onSky.text,
+    onSkyMuted: onSky.textMuted,
   },
   inputs: {
     id: 'inputs',
-    accent: '#E8893A',
-    accentMuted: 'rgba(232, 137, 58, 0.16)',
+    accent: '#E86A3C',
+    accentMuted: 'rgba(232, 106, 60, 0.16)',
     accentText: '#ffffff',
     bg: zoneGradients.inputs,
     cardBg: neutrals.surface,
     cardBorder: 'rgba(28, 28, 30, 0.06)',
-    eyebrow: '#8B5A2B',
+    eyebrow: '#C45A2A',
+    onSky: onSky.text,
+    onSkyMuted: onSky.textMuted,
   },
   outputs: {
     id: 'outputs',
@@ -178,6 +198,8 @@ export const zoneTokens: Record<ZoneId, ZoneTokens> = {
     cardBg: neutrals.surface,
     cardBorder: 'rgba(28, 28, 30, 0.06)',
     eyebrow: '#1E5A66',
+    onSky: onSky.text,
+    onSkyMuted: onSky.textMuted,
   },
   profile: {
     id: 'profile',
@@ -188,6 +210,8 @@ export const zoneTokens: Record<ZoneId, ZoneTokens> = {
     cardBg: neutrals.surface,
     cardBorder: 'rgba(28, 28, 30, 0.06)',
     eyebrow: '#5C5C6E',
+    onSky: onSky.text,
+    onSkyMuted: onSky.textMuted,
   },
 }
 
@@ -200,6 +224,9 @@ export function zoneCssVars(zone: ZoneTokens): Record<string, string> {
     '--zone-card-bg': zone.cardBg,
     '--zone-card-border': zone.cardBorder,
     '--zone-eyebrow': zone.eyebrow,
+    '--zone-on-sky': zone.onSky,
+    '--zone-on-sky-muted': zone.onSkyMuted,
+    '--zone-on-sky-shadow': onSky.shadow,
   }
 }
 

@@ -46,8 +46,11 @@ function SectionHeader({
       }}
     >
       <div>
-        <p style={sectionLabelStyle}>{label}</p>
+        <p className="on-sky-text-muted" style={{ ...sectionLabelStyle, color: undefined }}>
+          {label}
+        </p>
         <h3
+          className="on-sky-text"
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 24,
@@ -59,16 +62,7 @@ function SectionHeader({
           {title}
         </h3>
       </div>
-      <a
-        href={href}
-        style={{
-          fontSize: 12,
-          fontWeight: 500,
-          color: 'var(--zone-accent)',
-          textDecoration: 'none',
-          flexShrink: 0,
-        }}
-      >
+      <a href={href} className="on-sky-link" style={{ fontSize: 12, flexShrink: 0 }}>
         {linkLabel} →
       </a>
     </div>
@@ -258,7 +252,7 @@ export default function Dashboard() {
       </section>
 
       <div style={{ textAlign: 'center' }}>
-        <p style={{ fontSize: 10, color: '#a1a1aa' }}>
+        <p className="on-sky-text-muted" style={{ fontSize: 10, margin: 0 }}>
           Data is estimated using standard nutritional references. Actual values may vary.
         </p>
       </div>

@@ -42,18 +42,22 @@ function SharedSection({
 }) {
   return (
     <section>
-      <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 12px 0', color: '#3f3f46' }}>
+      <h2
+        className="on-sky-text"
+        style={{ fontSize: 15, fontWeight: 600, margin: '0 0 12px 0' }}
+      >
         {title} ({count})
       </h2>
       {count === 0 ? (
         <div
           style={{
             padding: '20px 24px',
-            borderRadius: 16,
-            border: '1px solid #e4e4e7',
-            background: '#fafafa',
-            color: '#a1a1aa',
+            borderRadius: 28,
+            border: '1px solid rgba(28, 28, 30, 0.06)',
+            background: 'rgba(255, 255, 255, 0.92)',
+            color: '#6c6c70',
             fontSize: 13,
+            boxShadow: '0 4px 16px rgba(28, 28, 30, 0.06)',
           }}
         >
           {emptyMessage}

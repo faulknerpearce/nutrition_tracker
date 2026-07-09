@@ -1,5 +1,7 @@
 import type { NetBalance } from '@nutrition-tracker/shared'
+import { netRingProgress } from '../../lib/dashboardCharts'
 import { atmosphere, neutrals, radius, type } from '../../lib/design-tokens'
+import ProgressRing from '../charts/ProgressRing'
 import Card from '../ui/Card'
 import GradientMeter from '../ui/GradientMeter'
 
@@ -12,6 +14,12 @@ const statusLabel: Record<NetBalance['status'], string> = {
   under: 'Building',
   in_range: 'Balanced',
   over: 'Above range',
+}
+
+const statusColor: Record<NetBalance['status'], string> = {
+  under: '#5AC8FA',
+  in_range: '#34C759',
+  over: '#FF453A',
 }
 
 const statusGradient: Record<NetBalance['status'], string> = {
@@ -141,6 +149,8 @@ function MeterRow({
 }
 
 export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOverviewPanelProps) {
+  const color = statusColor[balance.status]
+  const ring = netRingProgress(balance)
   const goalSpan = Math.max(balance.goalHigh, 1)
   const intakePct = Math.min((balance.consumed / goalSpan) * 100, 100)
   const outputPct = Math.min((balance.burned / goalSpan) * 100, 100)
@@ -149,10 +159,7 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
       ? Math.min((balance.activityCalories / Math.max(balance.burned, 1)) * 100, 100)
       : 0
   const netVsHighPct = Math.min((balance.net / goalSpan) * 100, 100)
-  const goalBandPct = Math.min(
-    ((balance.goalHigh - balance.goalLow) / goalSpan) * 100,
-    100,
-  )
+  const goalBandPct = Math.min(((balance.goalHigh - balance.goalLow) / goalSpan) * 100, 100)
 
   return (
     <Card tone="neutral" style={{ padding: 28 }}>
@@ -163,7 +170,7 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
           alignItems: 'flex-start',
           justifyContent: 'space-between',
           gap: 12,
-          marginBottom: 28,
+          marginBottom: 24,
         }}
       >
         <div>
@@ -201,27 +208,57 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
         />
       </div>
 
-      {/* Hero metric */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-          <span
+      {/* Hero: ring + large metric */}
+      <div className="energy-overview-ring-row" style={{ marginBottom: 28 }}>
+        <div className="energy-overview-ring">
+          <ProgressRing
+            value={balance.net}
+            goal={balance.goalHigh}
+            color={color}
+            size={148}
+            strokeWidth={12}
+            centerLabel={`${ring.pct}%`}
+            ariaLabel={`Net energy ${balance.net} kilocalories, ${ring.pct} percent of goal`}
+          />
+        </div>
+
+        <div className="energy-overview-stats">
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: type.hero,
+                fontWeight: 700,
+                letterSpacing: '-0.04em',
+                lineHeight: 1,
+                color: neutrals.textPrimary,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {balance.net.toLocaleString()}
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 500, color: neutrals.textMuted }}>kcal net</span>
+          </div>
+          <p
             style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: type.hero,
-              fontWeight: 700,
-              letterSpacing: '-0.04em',
-              lineHeight: 1,
-              color: neutrals.textPrimary,
-              fontVariantNumeric: 'tabular-nums',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              margin: '12px 0 0 0',
+              padding: '4px 10px',
+              borderRadius: radius.pill,
+              background: `${color}18`,
+              color,
+              fontSize: 12,
+              fontWeight: 600,
             }}
           >
-            {balance.net.toLocaleString()}
-          </span>
-          <span style={{ fontSize: 18, fontWeight: 500, color: neutrals.textMuted }}>kcal net</span>
+            {statusLabel[balance.status]}
+          </p>
+          <p style={{ fontSize: 13, color: neutrals.textMuted, margin: '12px 0 0 0', lineHeight: 1.45 }}>
+            {balance.contextMessage}
+          </p>
         </div>
-        <p style={{ fontSize: 13, color: neutrals.textMuted, margin: '10px 0 0 0', lineHeight: 1.45 }}>
-          {balance.contextMessage}
-        </p>
       </div>
 
       {/* Two-column summary */}
@@ -240,12 +277,6 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
 
       {/* Meter rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 24 }}>
-        <MeterRow
-          label="Balance"
-          valueText={statusLabel[balance.status]}
-          pct={Math.min(netVsHighPct, 100)}
-          gradient={statusGradient[balance.status]}
-        />
         <MeterRow
           label="Intake vs goal"
           valueText={`${Math.round(intakePct)}%`}
@@ -266,7 +297,7 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
               : 'BMR only'
           }
           pct={hasActivities || balance.activityCalories > 0 ? activityPct : 8}
-          gradient={atmosphere.gradients.warmCool}
+          gradient={statusGradient[balance.status]}
         />
       </div>
 
@@ -316,7 +347,6 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
           role="img"
           aria-label={`Net ${balance.net} within goal ${balance.goalLow} to ${balance.goalHigh}`}
         >
-          {/* Goal band highlight */}
           <div
             style={{
               position: 'absolute',
@@ -329,7 +359,6 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
               borderRight: '1px solid rgba(255,255,255,0.7)',
             }}
           />
-          {/* Net marker */}
           <div
             style={{
               position: 'absolute',

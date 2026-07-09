@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useZoneTheme } from '../../context/useZoneTheme'
 
 interface PageHeaderProps {
   eyebrow: string
@@ -8,15 +7,12 @@ interface PageHeaderProps {
   actions?: ReactNode
 }
 
+/** Page chrome on the zone sky — uses on-sky (white) text for contrast. */
 export default function PageHeader({ eyebrow, title, description, actions }: PageHeaderProps) {
-  const zone = useZoneTheme()
-
   return (
     <header className="page-header">
       <div className="page-header-main">
-        <p className="page-header-eyebrow" style={{ color: zone.eyebrow }}>
-          {eyebrow}
-        </p>
+        <p className="page-header-eyebrow">{eyebrow}</p>
         <h1 className="page-header-title">{title}</h1>
         {description && <p className="page-header-description">{description}</p>}
       </div>
