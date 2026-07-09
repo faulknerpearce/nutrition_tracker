@@ -262,7 +262,9 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
           <div className="app-nav-tabs">
             {navTabs.map((tab) => {
               const active = activeNav === tab.route
-              const accent = zoneTokens[tab.route].accent
+              // Dashboard uses sky-top cool slate (same as mobile center control)
+              const accent =
+                tab.route === 'dashboard' ? DASHBOARD_SKY_TOP : zoneTokens[tab.route].accent
               return (
                 <a
                   key={tab.route}
