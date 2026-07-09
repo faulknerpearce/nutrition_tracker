@@ -2,12 +2,22 @@ import type { NetBalance } from '@nutrition-tracker/shared'
 import { netRingProgress } from '../../lib/dashboardCharts'
 import { neutrals, radius, type as typeScale } from '../../lib/design-tokens'
 import ProgressRing from '../charts/ProgressRing'
+import DayNavigator from '../layout/DayNavigator'
 import Card from '../ui/Card'
 import OutputCompositionBar from './OutputCompositionBar'
 
 interface EnergyOverviewPanelProps {
   balance: NetBalance
   hasActivities: boolean
+  /** ISO date shown in this card (supports day browsing). */
+  date: string
+  isToday: boolean
+  canGoBack?: boolean
+  canGoForward?: boolean
+  dayLoading?: boolean
+  onPrevious: () => void
+  onNext: () => void
+  onGoToToday: () => void
 }
 
 /** Status of net kcal vs the daily goal band (low–high). */
@@ -184,7 +194,18 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
   )
 }
 
-export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOverviewPanelProps) {
+export default function EnergyOverviewPanel({
+  balance,
+  hasActivities,
+  date,
+  isToday,
+  canGoBack = true,
+  canGoForward = false,
+  dayLoading = false,
+  onPrevious,
+  onNext,
+  onGoToToday,
+}: EnergyOverviewPanelProps) {
   const color = statusColor[balance.status]
   const ring = netRingProgress(balance)
   // Fill only when net is positive; still show true % (including negative) in the center
@@ -199,7 +220,7 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 10,
-          marginBottom: 12,
+          marginBottom: 8,
         }}
       >
         <p
@@ -212,7 +233,7 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
             margin: 0,
           }}
         >
-          Today&apos;s energy
+          Daily energy
         </p>
         <span
           title={
@@ -237,7 +258,29 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
         </span>
       </div>
 
-      <div className="energy-overview-ring-row" style={{ marginBottom: 12 }}>
+      <div className="energy-day-nav" style={{ marginBottom: 12 }}>
+        <DayNavigator
+          date={date}
+          isToday={isToday}
+          compact
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          onGoToToday={onGoToToday}
+          itemLabel={{ singular: 'log day', plural: 'log days' }}
+        />
+      </div>
+
+      <div
+        className="energy-overview-ring-row"
+        style={{
+          marginBottom: 12,
+          opacity: dayLoading ? 0.55 : 1,
+          transition: 'opacity 0.15s ease',
+          pointerEvents: dayLoading ? 'none' : undefined,
+        }}
+      >
         <div className="energy-overview-ring">
           <ProgressRing
             value={ringFillValue}
@@ -309,10 +352,10 @@ export default function EnergyOverviewPanel({ balance, hasActivities }: EnergyOv
       </div>
 
       {/* Output breakdown: BMR vs activity (what makes up burn) */}
-      <OutputCompositionBar balance={balance} />
-
-      {/* Net vs goal band (not a decorative gradient) */}
-      <GoalZoneTrack balance={balance} />
+      <div style={{ opacity: dayLoading ? 0.55 : 1, transition: 'opacity 0.15s ease' }}>
+        <OutputCompositionBar balance={balance} isToday={isToday} />
+        <GoalZoneTrack balance={balance} />
+      </div>
     </Card>
   )
 }

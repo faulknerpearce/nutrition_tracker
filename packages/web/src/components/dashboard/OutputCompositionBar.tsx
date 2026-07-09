@@ -3,20 +3,31 @@ import { neutrals } from '../../lib/design-tokens'
 
 interface OutputCompositionBarProps {
   balance: NetBalance
+  /** When false, copy says "this day" instead of "today". */
+  isToday?: boolean
 }
 
-/** Soft lavender (theme dusk accent) — BMR share of burn. */
-const BMR_COLOR = '#9B8EC4'
-const BMR_GRADIENT = 'linear-gradient(90deg, #8B7EB8, #B5A8D9)'
+/** Richer dusk purple — baseline burn (not activity). */
+const BMR_COLOR = '#6B4CE0'
+const BMR_STRIPE = 'rgba(255, 255, 255, 0.38)'
+/** Diagonally dashed / hatched fill over solid purple. */
+const BMR_HATCH = `repeating-linear-gradient(
+  -45deg,
+  ${BMR_COLOR} 0 4px,
+  color-mix(in srgb, ${BMR_COLOR} 72%, #1a1035) 4px 5px,
+  ${BMR_COLOR} 5px 9px,
+  ${BMR_STRIPE} 9px 11px
+)`
 
 /** Burn coral (outputs accent) — activity share of burn. */
 const ACTIVITY_COLOR = '#E86A3C'
 const ACTIVITY_GRADIENT = 'linear-gradient(90deg, #E86A3C, #FF9F5C)'
 
-export default function OutputCompositionBar({ balance }: OutputCompositionBarProps) {
+export default function OutputCompositionBar({ balance, isToday = true }: OutputCompositionBarProps) {
   const { bmr, activityCalories, burned } = balance
   const bmrShare = burned > 0 ? (bmr / burned) * 100 : 100
   const activityShare = burned > 0 ? (activityCalories / burned) * 100 : 0
+  const dayWord = isToday ? "today's" : "this day's"
 
   return (
     <div style={{ marginBottom: 14 }}>
@@ -44,7 +55,7 @@ export default function OutputCompositionBar({ balance }: OutputCompositionBarPr
 
       <div
         role="img"
-        aria-label={`Total output ${burned} kilocalories: BMR ${bmr}, activity ${activityCalories}`}
+        aria-label={`Total output ${burned} kilocalories: BMR ${bmr} (baseline, hatched), activity ${activityCalories}`}
         style={{
           display: 'flex',
           height: 12,
@@ -56,10 +67,10 @@ export default function OutputCompositionBar({ balance }: OutputCompositionBarPr
         <div
           style={{
             width: `${bmrShare}%`,
-            background: BMR_GRADIENT,
+            background: BMR_HATCH,
             transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
-          title={`BMR ${bmr.toLocaleString()} kcal`}
+          title={`BMR (baseline) ${bmr.toLocaleString()} kcal`}
         />
         {activityShare > 0 && (
           <div
@@ -85,22 +96,26 @@ export default function OutputCompositionBar({ balance }: OutputCompositionBarPr
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span
+            aria-hidden="true"
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 9999,
-              background: BMR_COLOR,
+              width: 12,
+              height: 12,
+              borderRadius: 3,
+              background: BMR_HATCH,
+              border: `1px solid ${BMR_COLOR}`,
               flexShrink: 0,
             }}
           />
           BMR {bmr.toLocaleString()} kcal
+          <span style={{ color: neutrals.textFaint }}>(baseline)</span>
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span
+            aria-hidden="true"
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 9999,
+              width: 12,
+              height: 12,
+              borderRadius: 3,
               background: ACTIVITY_COLOR,
               flexShrink: 0,
             }}
@@ -109,7 +124,7 @@ export default function OutputCompositionBar({ balance }: OutputCompositionBarPr
         </span>
       </div>
       <p style={{ fontSize: 11, color: neutrals.textFaint, margin: '6px 0 0 0', lineHeight: 1.4 }}>
-        Composition of today&apos;s burn — not compared to a target.
+        Composition of {dayWord} burn — hatched BMR is resting metabolism, not logged activity.
       </p>
     </div>
   )

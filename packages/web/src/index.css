@@ -1407,6 +1407,47 @@ html {
   gap: 16px;
 }
 
+/* Day nav inside energy card — compact, no glass smear */
+.energy-day-nav .inputs-day-nav {
+  margin-bottom: 0;
+  padding: 8px 0;
+  gap: 8px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.energy-day-nav .inputs-day-nav-button {
+  width: 32px;
+  height: 32px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+}
+
+.energy-day-nav .inputs-day-nav-button:hover:not(:disabled) {
+  color: var(--zone-accent);
+  background: #ffffff;
+}
+
+.energy-day-nav .inputs-day-nav-title {
+  color: var(--color-text-primary);
+}
+
+.energy-day-nav .inputs-day-nav-calendar,
+.energy-day-nav .inputs-day-nav-date,
+.energy-day-nav .inputs-day-nav-meta {
+  color: var(--color-text-muted);
+}
+
+.energy-day-nav .inputs-day-nav-today-button {
+  border-color: color-mix(in srgb, var(--zone-accent) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--zone-accent) 10%, white);
+  color: var(--zone-accent);
+}
+
 .energy-overview-ring-row {
   display: flex;
   flex-direction: row;

@@ -3,13 +3,14 @@ import {
   formatDuration,
   resolveBmr,
   resolveTrendsDateRange,
+  shiftISODate,
   sumActivityTotals,
   sumTotals,
   todayISO,
   type DailyEnergySnapshot,
   type TrendsRangePreset,
 } from '@nutrition-tracker/shared'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNutritionGoals, useProfile } from '../context/useProfile'
 import { sectionHeader as sectionLabelStyle } from '../lib/styles'
 import ActivityOverviewPanel from '../components/dashboard/ActivityOverviewPanel'
@@ -72,10 +73,16 @@ function SectionHeader({
 export default function Dashboard() {
   const nutritionGoals = useNutritionGoals()
   const { profile } = useProfile()
+  const today = todayISO()
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  /** Energy card day browser (independent of rest of dashboard, which stays on today). */
+  const [energyDate, setEnergyDate] = useState(today)
+  const [energyEntries, setEnergyEntries] = useState<FoodEntry[]>([])
+  const [energyActivities, setEnergyActivities] = useState<Activity[]>([])
+  const [energyLoading, setEnergyLoading] = useState(true)
   const [trendsPreset, setTrendsPreset] = useState<TrendsRangePreset>('last_7')
   const [customStart, setCustomStart] = useState(() => resolveTrendsDateRange('last_7').start)
   const [customEnd, setCustomEnd] = useState(todayISO())
@@ -84,6 +91,7 @@ export default function Dashboard() {
   const [trendsError, setTrendsError] = useState<string | null>(null)
 
   const { bmr } = useMemo(() => resolveBmr(profile), [profile])
+  const energyIsToday = energyDate === today
 
   const trendsRange = useMemo(
     () =>
@@ -110,6 +118,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     let cancelled = false
+    setEnergyLoading(true)
+    Promise.all([fetchEntries(energyDate), fetchActivities(energyDate)])
+      .then(([food, acts]) => {
+        if (cancelled) return
+        setEnergyEntries(food)
+        setEnergyActivities(acts)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Failed to load energy day', energyDate, err)
+          setEnergyEntries([])
+          setEnergyActivities([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setEnergyLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [energyDate])
+
+  useEffect(() => {
+    let cancelled = false
     setTrendsLoading(true)
     setTrendsError(null)
 
@@ -132,6 +164,21 @@ export default function Dashboard() {
     }
   }, [trendsRange.start, trendsRange.end, bmr])
 
+  const goEnergyPrev = useCallback(() => {
+    setEnergyDate((d) => shiftISODate(d, -1))
+  }, [])
+
+  const goEnergyNext = useCallback(() => {
+    setEnergyDate((d) => {
+      if (d >= todayISO()) return d
+      return shiftISODate(d, 1)
+    })
+  }, [])
+
+  const goEnergyToday = useCallback(() => {
+    setEnergyDate(todayISO())
+  }, [])
+
   if (loading) {
     return <PageLoading message="Loading dashboard..." />
   }
@@ -147,9 +194,11 @@ export default function Dashboard() {
 
   const foodTotals = sumTotals(entries)
   const activityTotals = sumActivityTotals(activities)
-  const balance = computeNetBalance(
-    foodTotals.calories,
-    activityTotals.calories,
+  const energyFoodTotals = sumTotals(energyEntries)
+  const energyActivityTotals = sumActivityTotals(energyActivities)
+  const energyBalance = computeNetBalance(
+    energyFoodTotals.calories,
+    energyActivityTotals.calories,
     nutritionGoals.calories.low,
     nutritionGoals.calories.high,
     bmr,
@@ -166,7 +215,18 @@ export default function Dashboard() {
       />
 
       <div style={{ marginBottom: 16 }}>
-        <EnergyOverviewPanel balance={balance} hasActivities={activities.length > 0} />
+        <EnergyOverviewPanel
+          balance={energyBalance}
+          hasActivities={energyActivities.length > 0}
+          date={energyDate}
+          isToday={energyIsToday}
+          canGoBack
+          canGoForward={!energyIsToday}
+          dayLoading={energyLoading}
+          onPrevious={goEnergyPrev}
+          onNext={goEnergyNext}
+          onGoToToday={goEnergyToday}
+        />
       </div>
 
       <section style={{ marginBottom: 28 }}>
