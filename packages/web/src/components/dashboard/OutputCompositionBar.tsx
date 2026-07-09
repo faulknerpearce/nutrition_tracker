@@ -7,15 +7,16 @@ interface OutputCompositionBarProps {
   isToday?: boolean
 }
 
-/** Richer dusk purple — baseline burn (not activity). */
-const BMR_COLOR = '#6B4CE0'
-const BMR_STRIPE = 'rgba(255, 255, 255, 0.38)'
-/** Diagonally dashed / hatched fill over solid purple. */
+/** Muted gray — baseline burn (not logged activity). */
+const BMR_COLOR = '#8E8E93'
+const BMR_BASE = '#A1A1A6'
+const BMR_STRIPE = 'rgba(255, 255, 255, 0.45)'
+/** Diagonally hatched muted gray fill. */
 const BMR_HATCH = `repeating-linear-gradient(
   -45deg,
-  ${BMR_COLOR} 0 4px,
-  color-mix(in srgb, ${BMR_COLOR} 72%, #1a1035) 4px 5px,
-  ${BMR_COLOR} 5px 9px,
+  ${BMR_BASE} 0 4px,
+  color-mix(in srgb, ${BMR_BASE} 78%, #52525b) 4px 5px,
+  ${BMR_BASE} 5px 9px,
   ${BMR_STRIPE} 9px 11px
 )`
 

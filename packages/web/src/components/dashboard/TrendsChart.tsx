@@ -49,8 +49,8 @@ const SERIES: ChartSeries[] = [
   },
 ]
 
-/** Hide per-day dots on mobile for ~30-day (and longer) ranges. */
-const MOBILE_HIDE_DOTS_MIN_DAYS = 15
+/** Hide per-day dots for ~30-day (and longer) ranges — all viewports. */
+const HIDE_DOTS_MIN_DAYS = 15
 
 function formatShortDate(iso: string): string {
   return parseISODate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -182,7 +182,7 @@ export default function TrendsChart({ rows }: TrendsChartProps) {
   }
 
   const formatYTick = isMobile ? formatCompactKcal : (v: number) => v.toLocaleString()
-  const showPoints = !(isMobile && rows.length >= MOBILE_HIDE_DOTS_MIN_DAYS)
+  const showPoints = rows.length < HIDE_DOTS_MIN_DAYS
 
   return (
     <div className={isMobile ? 'trends-chart trends-chart-mobile' : 'trends-chart'}>
@@ -329,11 +329,16 @@ export default function TrendsChart({ rows }: TrendsChartProps) {
         ))}
       </div>
 
-      {isMobile && rows.length > 0 && (
+      {rows.length > 0 && !showPoints && (
         <p className="trends-chart-mobile-hint">
-          {showPoints
-            ? 'Intake: open green circles · Output: dashed + coral dots · Net: solid filled. Tap a point for exact kcal.'
-            : 'Intake solid green · Output dashed coral · Net bold solid. Y-axis k = thousands.'}
+          Longer ranges show lines only (no day dots). Intake solid · Output dashed · Net bold
+          {isMobile ? '. Y-axis k = thousands.' : '.'}
+        </p>
+      )}
+      {isMobile && rows.length > 0 && showPoints && (
+        <p className="trends-chart-mobile-hint">
+          Intake: open green circles · Output: dashed + coral dots · Net: solid filled. Tap a point
+          for exact kcal.
         </p>
       )}
     </div>
