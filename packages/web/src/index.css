@@ -1102,29 +1102,41 @@ body {
 
 .energy-overview-ring-row {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 20px;
-  text-align: center;
+  gap: 16px;
+  text-align: left;
 }
 
 .energy-overview-ring {
   display: flex;
   justify-content: center;
-  width: 100%;
+  flex-shrink: 0;
 }
 
 .energy-overview-stats {
-  width: 100%;
-  max-width: 360px;
+  flex: 1;
+  min-width: 0;
 }
 
 .energy-overview-stats-header {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 420px) {
+  .energy-overview-ring-row {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .energy-overview-stats {
+    width: 100%;
+  }
 }
 
 .modal-overlay {

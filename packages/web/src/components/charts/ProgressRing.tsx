@@ -23,8 +23,9 @@ export default function ProgressRing({
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const pct = goal > 0 ? Math.min(value / goal, 1) : 0
-  const dashOffset = circumference * (1 - pct)
+  // Never paint a fill for zero/negative values (e.g. negative net kcal)
+  const fillRatio = goal > 0 && value > 0 ? Math.min(value / goal, 1) : 0
+  const dashOffset = circumference * (1 - fillRatio)
   const displayPct = goal > 0 ? Math.round((value / goal) * 100) : 0
   const center = size / 2
 
@@ -58,7 +59,7 @@ export default function ProgressRing({
           strokeDashoffset={dashOffset}
           style={{ transition: RING_TRANSITION }}
         />
-        {goal > 0 && value > goal && (
+        {goal > 0 && value > goal && value > 0 && (
           <circle
             cx={center}
             cy={center}

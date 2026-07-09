@@ -165,11 +165,11 @@ export default function Dashboard() {
         description={`Fuel, movement, and balance · ${todayISO()}`}
       />
 
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <EnergyOverviewPanel balance={balance} hasActivities={activities.length > 0} />
       </div>
 
-      <section style={{ marginBottom: 40 }}>
+      <section style={{ marginBottom: 28 }}>
         <TrendsPanel
           rows={trendRows}
           preset={trendsPreset}
