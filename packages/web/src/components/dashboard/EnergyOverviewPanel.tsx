@@ -43,16 +43,20 @@ const statusBadgeBg: Record<NetBalance['status'], string> = {
   over: 'rgba(232, 106, 60, 0.16)',
 }
 
-/** Net position on a track with the goal low–high band highlighted. */
+/** Net position on a track with the goal low–high band and a Target mark. */
 function GoalZoneTrack({ balance }: { balance: NetBalance }) {
   const max = Math.max(balance.goalHigh, balance.net, 1)
   const lowPct = max > 0 ? (balance.goalLow / max) * 100 : 0
   const highPct = max > 0 ? (balance.goalHigh / max) * 100 : 0
+  // Target sits in the green zone — midpoint of low–high band
+  const targetValue = (balance.goalLow + balance.goalHigh) / 2
+  const targetPct = max > 0 ? Math.min((targetValue / max) * 100, 100) : 0
   const netPct = max > 0 ? Math.min(Math.max(balance.net, 0) / max * 100, 100) : 0
   const color = statusColor[balance.status]
   const trackTop = 10
   const trackHeight = 12
   const dotSize = 14
+  const targetMarkH = 20
   const trackCenterY = trackTop + trackHeight / 2
 
   return (
@@ -89,7 +93,7 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
         </span>
       </div>
 
-      <div style={{ position: 'relative', height: 36, marginBottom: 4 }}>
+      <div style={{ position: 'relative', height: 40, marginBottom: 4 }}>
         <div
           style={{
             position: 'absolute',
@@ -117,6 +121,7 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
             }}
           />
         )}
+        {/* Green target zone (goal low → high) */}
         <div
           style={{
             position: 'absolute',
@@ -128,6 +133,24 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
             background: GOAL_GREEN_SOFT,
             border: `2px solid ${GOAL_GREEN_BORDER}`,
             boxSizing: 'border-box',
+          }}
+        />
+        {/* Target mark — center of green zone */}
+        <div
+          title={`Target ${Math.round(targetValue).toLocaleString()} kcal`}
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: trackCenterY,
+            left: `${targetPct}%`,
+            width: 3,
+            height: targetMarkH,
+            marginLeft: -1.5,
+            borderRadius: 2,
+            background: GOAL_GREEN,
+            boxShadow: '0 0 0 2px #ffffff, 0 1px 3px rgba(0,0,0,0.18)',
+            transform: 'translateY(-50%)',
+            zIndex: 2,
           }}
         />
         {balance.net > 0 && (
@@ -144,6 +167,7 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
               boxShadow: `0 2px 8px ${color}66, 0 0 0 1px ${color}`,
               transform: 'translateY(-50%)',
               transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              zIndex: 3,
             }}
           />
         )}
@@ -184,9 +208,9 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
               color: GOAL_GREEN,
             }}
           >
-            Goal high
+            Target
           </span>
-          <span style={{ color: GOAL_GREEN }}>{balance.goalHigh.toLocaleString()}</span>
+          <span style={{ color: GOAL_GREEN }}>{Math.round(targetValue).toLocaleString()}</span>
         </span>
       </div>
     </div>
