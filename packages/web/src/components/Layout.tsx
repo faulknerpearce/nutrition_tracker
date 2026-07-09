@@ -102,19 +102,16 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
         <div className="app-nav-inner">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <a href={routeHref('dashboard')} className="app-nav-brand" style={{ textDecoration: 'none' }}>
-              <div
-                className="app-nav-logo"
+              <i
+                className="fa-solid fa-fire app-nav-logo-icon"
+                aria-hidden="true"
                 style={{
-                  background:
-                    activeNav === 'inputs'
-                      ? zoneTokens.inputs.accent
-                      : activeNav === 'outputs'
-                        ? zoneTokens.outputs.accent
-                        : zoneTokens.dashboard.accent,
+                  color:
+                    atmosphereZone === 'dashboard'
+                      ? DASHBOARD_SKY_TOP
+                      : zoneTokens[atmosphereZone].accent,
                 }}
-              >
-                <i className="fa-solid fa-fire app-nav-logo-icon" aria-hidden="true" />
-              </div>
+              />
               <span className="app-nav-title">Nutrition Tracker</span>
             </a>
             <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
