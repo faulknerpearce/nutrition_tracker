@@ -22,7 +22,7 @@ interface ChartSeries {
 
 /**
  * Golden-hour series with non-color differentiators:
- * Intake solid + hollow points, Output dashed, Net solid thicker + filled points.
+ * Intake solid + hollow points, Output dashed + filled points, Net solid thicker + filled points.
  */
 const SERIES: ChartSeries[] = [
   {
@@ -37,7 +37,7 @@ const SERIES: ChartSeries[] = [
     label: 'Output',
     color: '#2F8A9B',
     dash: '7 5',
-    marker: 'none',
+    marker: 'filled',
     pick: (row) => row.totalOutput,
   },
   {
@@ -329,7 +329,7 @@ export default function TrendsChart({ rows }: TrendsChartProps) {
       {isMobile && rows.length > 0 && (
         <p className="trends-chart-mobile-hint">
           {showPoints
-            ? 'Intake: open orange circles · Output: dashed · Net: solid filled. Tap a point for exact kcal.'
+            ? 'Intake: open orange circles · Output: dashed + teal dots · Net: solid filled. Tap a point for exact kcal.'
             : 'Intake solid · Output dashed · Net bold solid. Y-axis k = thousands.'}
         </p>
       )}
