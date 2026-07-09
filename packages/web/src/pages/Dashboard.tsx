@@ -215,7 +215,6 @@ export default function Dashboard() {
       <div style={{ marginBottom: 16 }}>
         <EnergyOverviewPanel
           balance={energyBalance}
-          hasActivities={energyActivities.length > 0}
           date={energyDate}
           isToday={energyIsToday}
           canGoBack

@@ -8,7 +8,6 @@ import OutputCompositionBar from './OutputCompositionBar'
 
 interface EnergyOverviewPanelProps {
   balance: NetBalance
-  hasActivities: boolean
   /** ISO date shown in this card (supports day browsing). */
   date: string
   isToday: boolean
@@ -196,7 +195,6 @@ function GoalZoneTrack({ balance }: { balance: NetBalance }) {
 
 export default function EnergyOverviewPanel({
   balance,
-  hasActivities: _hasActivities,
   date,
   isToday,
   canGoBack = true,
@@ -206,7 +204,6 @@ export default function EnergyOverviewPanel({
   onNext,
   onGoToToday,
 }: EnergyOverviewPanelProps) {
-  void _hasActivities
   const color = statusColor[balance.status]
   const ring = netRingProgress(balance)
   // Fill only when net is positive; still show true % (including negative) in the center
