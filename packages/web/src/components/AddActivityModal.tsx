@@ -4,6 +4,7 @@ import {
   formatTimeInputValue,
   loggedAtFromDayAndTime,
   resolveLogWorkoutMetrics,
+  todayISO,
   validateActivity,
   type Activity,
   type ActivityWrite,
@@ -22,11 +23,12 @@ interface AddActivityModalProps {
   activity?: Activity
   logDate: string
   timeZone: string
-  onAdd: (activity: ActivityWrite) => Promise<void>
+  onAdd: (activity: ActivityWrite, options?: { activityDate?: string }) => Promise<void>
   onLogWorkout?: (options: {
     workoutId: string
     setsLogged: number
     loggedAt?: string
+    activityDate?: string
   }) => Promise<void>
   onClose: () => void
 }
@@ -95,6 +97,7 @@ export default function AddActivityModal({
 }: AddActivityModalProps) {
   const isEdit = activity !== undefined
   const [mode, setMode] = useState<AddMode>('manual')
+  const [activityDate, setActivityDate] = useState(logDate)
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([])
   const [selectedWorkoutId, setSelectedWorkoutId] = useState('')
   const [workoutSetsLogged, setWorkoutSetsLogged] = useState('1')
@@ -178,7 +181,7 @@ export default function AddActivityModal({
       return
     }
 
-    const loggedAt = loggedAtFromDayAndTime(logDate, form.logTime, timeZone)
+    const loggedAt = loggedAtFromDayAndTime(activityDate, form.logTime, timeZone)
     if (!loggedAt.ok) {
       setError(loggedAt.error)
       return
@@ -187,16 +190,19 @@ export default function AddActivityModal({
     setAdding(true)
     setError(null)
     try {
-      await onAdd({
-        name: validated.value.name,
-        activityType: validated.value.activityType,
-        movingTimeSeconds: validated.value.movingTimeSeconds,
-        distanceMeters: validated.value.distanceMeters,
-        averageHeartrate: validated.value.averageHeartrate,
-        maxHeartrate: validated.value.maxHeartrate,
-        calories: validated.value.calories,
-        loggedAt: loggedAt.value,
-      })
+      await onAdd(
+        {
+          name: validated.value.name,
+          activityType: validated.value.activityType,
+          movingTimeSeconds: validated.value.movingTimeSeconds,
+          distanceMeters: validated.value.distanceMeters,
+          averageHeartrate: validated.value.averageHeartrate,
+          maxHeartrate: validated.value.maxHeartrate,
+          calories: validated.value.calories,
+          loggedAt: loggedAt.value,
+        },
+        { activityDate },
+      )
       close()
     } catch (err) {
       setError(
@@ -219,7 +225,7 @@ export default function AddActivityModal({
       return
     }
 
-    const loggedAt = loggedAtFromDayAndTime(logDate, workoutLogTime, timeZone)
+    const loggedAt = loggedAtFromDayAndTime(activityDate, workoutLogTime, timeZone)
     if (!loggedAt.ok) {
       setError(loggedAt.error)
       return
@@ -232,6 +238,7 @@ export default function AddActivityModal({
         workoutId: selectedWorkout.id,
         setsLogged,
         loggedAt: loggedAt.value,
+        activityDate,
       })
       close()
     } catch (err) {
@@ -322,6 +329,19 @@ export default function AddActivityModal({
                   ))
                 )}
               </select>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="activity-workout-log-date" style={labelBase}>
+                Log date
+              </label>
+              <input
+                id="activity-workout-log-date"
+                type="date"
+                value={activityDate}
+                max={todayISO()}
+                onChange={(e) => setActivityDate(e.target.value || activityDate)}
+                style={inputBase}
+              />
             </div>
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="activity-workout-log-time" style={labelBase}>
@@ -448,6 +468,25 @@ export default function AddActivityModal({
             ))}
           </select>
         </div>
+
+        {!isEdit && (
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="activity-log-date" style={labelBase}>
+              Log date
+            </label>
+            <input
+              id="activity-log-date"
+              type="date"
+              value={activityDate}
+              max={todayISO()}
+              onChange={(e) => setActivityDate(e.target.value || activityDate)}
+              style={inputBase}
+            />
+            <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+              Choose today or a previous day if you are catching up.
+            </p>
+          </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <label htmlFor="activity-log-time" style={labelBase}>

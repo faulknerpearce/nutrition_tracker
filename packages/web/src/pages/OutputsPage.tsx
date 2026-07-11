@@ -95,46 +95,48 @@ export default function OutputsPage({ onOpenLogActivityReady }: OutputsPageProps
   }, [loading, selectedDate, days])
 
   const openLogActivity = useCallback(() => {
-    setSelectedDate(today)
     setShowAddForm(true)
-  }, [today])
+  }, [])
 
   useEffect(() => {
     onOpenLogActivityReady?.(openLogActivity)
   }, [onOpenLogActivityReady, openLogActivity])
 
-  async function persistAdd(input: ActivityWrite) {
-    const activity = await addActivity(input)
+  async function persistAdd(input: ActivityWrite, options?: { activityDate?: string }) {
+    const activityDate = options?.activityDate ?? selectedDate
+    const activity = await addActivity(input, { activityDate })
     setDays((prev) => {
-      const existing = prev.find((day) => day.date === today)
+      const existing = prev.find((day) => day.date === activityDate)
       if (existing) {
-        return updateDayActivities(prev, today, [activity, ...existing.activities])
+        return updateDayActivities(prev, activityDate, [activity, ...existing.activities])
       }
       return [
-        { date: today, activities: [activity], totals: sumActivityTotals([activity]) },
+        { date: activityDate, activities: [activity], totals: sumActivityTotals([activity]) },
         ...prev,
-      ]
+      ].sort((a, b) => b.date.localeCompare(a.date))
     })
-    setSelectedDate(today)
+    setSelectedDate(activityDate)
   }
 
   async function persistLogWorkout(options: {
     workoutId: string
     setsLogged: number
     loggedAt?: string
+    activityDate?: string
   }) {
-    const activity = await logWorkout(options)
+    const activityDate = options.activityDate ?? selectedDate
+    const activity = await logWorkout({ ...options, activityDate })
     setDays((prev) => {
-      const existing = prev.find((day) => day.date === today)
+      const existing = prev.find((day) => day.date === activityDate)
       if (existing) {
-        return updateDayActivities(prev, today, [activity, ...existing.activities])
+        return updateDayActivities(prev, activityDate, [activity, ...existing.activities])
       }
       return [
-        { date: today, activities: [activity], totals: sumActivityTotals([activity]) },
+        { date: activityDate, activities: [activity], totals: sumActivityTotals([activity]) },
         ...prev,
-      ]
+      ].sort((a, b) => b.date.localeCompare(a.date))
     })
-    setSelectedDate(today)
+    setSelectedDate(activityDate)
   }
 
   async function persistUpdate(id: string, input: ActivityWrite) {
@@ -203,8 +205,8 @@ export default function OutputsPage({ onOpenLogActivityReady }: OutputsPageProps
             activities={activeDay.activities}
             logDate={selectedDate}
             timeZone={profile.timeZone}
-            onAdd={isToday ? persistAdd : undefined}
-            onLogWorkout={isToday ? persistLogWorkout : undefined}
+            onAdd={persistAdd}
+            onLogWorkout={persistLogWorkout}
             onEdit={persistUpdate}
             onDelete={persistDelete}
             collapsible={false}
@@ -215,7 +217,7 @@ export default function OutputsPage({ onOpenLogActivityReady }: OutputsPageProps
 
       {showAddForm && (
         <AddActivityModal
-          logDate={today}
+          logDate={selectedDate}
           timeZone={profile.timeZone}
           onAdd={persistAdd}
           onLogWorkout={async (options) => {

@@ -10,11 +10,12 @@ interface ActivityLogSectionProps {
   activities: Activity[]
   logDate: string
   timeZone: string
-  onAdd?: (activity: ActivityWrite) => Promise<void>
+  onAdd?: (activity: ActivityWrite, options?: { activityDate?: string }) => Promise<void>
   onLogWorkout?: (options: {
     workoutId: string
     setsLogged: number
     loggedAt?: string
+    activityDate?: string
   }) => Promise<void>
   onEdit?: (id: string, activity: ActivityWrite) => Promise<void>
   onDelete?: (id: string) => Promise<void>

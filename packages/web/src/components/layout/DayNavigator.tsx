@@ -42,7 +42,7 @@ function NavArrowButton({
 
 /**
  * Day browser bar:
- * [Calendar] [Day / date]  ·················  [←] [→]
+ * [Day / date]  ·················  [Calendar] [←] [→]
  */
 export default function DayNavigator({
   date,
@@ -68,14 +68,6 @@ export default function DayNavigator({
       aria-label="Day navigation"
     >
       <div className="inputs-day-nav-leading">
-        {onGoToToday ? (
-          <GoToTodayButton isToday={isToday} onClick={onGoToToday} />
-        ) : (
-          <span className="go-to-today-icon go-to-today-icon-dormant" aria-hidden="true">
-            <i className="fa-regular fa-calendar" />
-          </span>
-        )}
-
         <div className="inputs-day-nav-label">
           <div className="inputs-day-nav-title-row">
             <div className="inputs-day-nav-title">{headline}</div>
@@ -92,6 +84,13 @@ export default function DayNavigator({
       </div>
 
       <div className="inputs-day-nav-trailing">
+        {onGoToToday ? (
+          <GoToTodayButton isToday={isToday} onClick={onGoToToday} />
+        ) : (
+          <span className="go-to-today-icon go-to-today-icon-dormant" aria-hidden="true">
+            <i className="fa-regular fa-calendar" />
+          </span>
+        )}
         <NavArrowButton direction="previous" disabled={!canGoBack} onClick={onPrevious} />
         <NavArrowButton direction="next" disabled={!canGoForward} onClick={onNext} />
       </div>

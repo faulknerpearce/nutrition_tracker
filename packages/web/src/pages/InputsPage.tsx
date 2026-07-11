@@ -102,15 +102,13 @@ export default function InputsPage({
   }, [loading, selectedDate, days])
 
   const openAddEntry = useCallback(() => {
-    setSelectedDate(today)
     setPrefillEntry(null)
     setShowAddForm(true)
-  }, [today])
+  }, [])
 
   const openBarcodeScanner = useCallback(() => {
-    setSelectedDate(today)
     setShowScanner(true)
-  }, [today])
+  }, [])
 
   useEffect(() => {
     onOpenAddEntryReady?.(openAddEntry)
@@ -126,9 +124,11 @@ export default function InputsPage({
       saveAsRecipe?: boolean
       perServing?: FoodEntryWrite
       servingWeightGrams?: number
+      entryDate?: string
     },
   ) {
-    const entry = await addEntry(input)
+    const entryDate = options?.entryDate ?? selectedDate
+    const entry = await addEntry(input, { entryDate })
     if (options?.saveAsRecipe) {
       const recipeSource = options.perServing ?? input
       await saveRecipe({
@@ -155,13 +155,15 @@ export default function InputsPage({
       })
     }
     setDays((prev) => {
-      const existing = prev.find((day) => day.date === today)
+      const existing = prev.find((day) => day.date === entryDate)
       if (existing) {
-        return updateDayEntries(prev, today, [entry, ...existing.entries])
+        return updateDayEntries(prev, entryDate, [entry, ...existing.entries])
       }
-      return [{ date: today, entries: [entry], totals: sumTotals([entry]) }, ...prev]
+      return [{ date: entryDate, entries: [entry], totals: sumTotals([entry]) }, ...prev].sort(
+        (a, b) => b.date.localeCompare(a.date),
+      )
     })
-    setSelectedDate(today)
+    setSelectedDate(entryDate)
   }
 
   async function persistLogRecipe(
@@ -171,23 +173,28 @@ export default function InputsPage({
       portionQuantity: number
       servingWeightGrams?: number
       loggedAt?: string
+      entryDate?: string
     },
   ) {
+    const entryDate = options.entryDate ?? selectedDate
     const entry = await logRecipe({
       recipeId,
       portionUnit: options.portionUnit,
       portionQuantity: options.portionQuantity,
       servingWeightGrams: options.servingWeightGrams,
       loggedAt: options.loggedAt,
+      entryDate,
     })
     setDays((prev) => {
-      const existing = prev.find((day) => day.date === today)
+      const existing = prev.find((day) => day.date === entryDate)
       if (existing) {
-        return updateDayEntries(prev, today, [entry, ...existing.entries])
+        return updateDayEntries(prev, entryDate, [entry, ...existing.entries])
       }
-      return [{ date: today, entries: [entry], totals: sumTotals([entry]) }, ...prev]
+      return [{ date: entryDate, entries: [entry], totals: sumTotals([entry]) }, ...prev].sort(
+        (a, b) => b.date.localeCompare(a.date),
+      )
     })
-    setSelectedDate(today)
+    setSelectedDate(entryDate)
   }
 
   async function persistUpdate(id: string, input: FoodEntryWrite) {
@@ -314,7 +321,7 @@ export default function InputsPage({
       {showAddForm && (
         <AddEntryModal
           prefill={prefillEntry ?? undefined}
-          logDate={today}
+          logDate={selectedDate}
           timeZone={profile.timeZone}
           onAdd={persistAdd}
           onLogRecipe={persistLogRecipe}

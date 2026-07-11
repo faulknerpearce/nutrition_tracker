@@ -6,6 +6,7 @@ import {
   loggedAtFromDayAndTime,
   scaleMacrosByPortion,
   scaleRecipeToServings,
+  todayISO,
   validateEntry,
   validatePortionInput,
   type FoodEntry,
@@ -36,6 +37,7 @@ interface AddEntryModalProps {
       saveAsRecipe?: boolean
       perServing?: FoodEntryWrite
       servingWeightGrams?: number
+      entryDate?: string
     },
   ) => Promise<void>
   onLogRecipe?: (
@@ -45,6 +47,7 @@ interface AddEntryModalProps {
       portionQuantity: number
       servingWeightGrams?: number
       loggedAt?: string
+      entryDate?: string
     },
   ) => Promise<void>
   onClose: () => void
@@ -202,6 +205,8 @@ export default function AddEntryModal({
 }: AddEntryModalProps) {
   const isEdit = entry !== undefined
   const [mode, setMode] = useState<AddMode>('manual')
+  /** Calendar day for the log (editable when adding; locked when editing). */
+  const [entryDate, setEntryDate] = useState(logDate)
   const [form, setForm] = useState<FormState>(() =>
     entry
       ? formFromEntry(entry, timeZone)
@@ -367,7 +372,7 @@ export default function AddEntryModal({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  const resolveLoggedAt = () => loggedAtFromDayAndTime(logDate, form.logTime, timeZone)
+  const resolveLoggedAt = () => loggedAtFromDayAndTime(entryDate, form.logTime, timeZone)
 
   const close = () => {
     setForm(entry ? formFromEntry(entry, timeZone) : emptyForm(timeZone))
@@ -456,6 +461,7 @@ export default function AddEntryModal({
         saveAsRecipe,
         perServing: saveAsRecipe ? perReferenceEntry : undefined,
         servingWeightGrams: saveAsRecipe ? portionMeta?.referenceWeightGrams : undefined,
+        entryDate,
       })
       close()
     } catch (err) {
@@ -486,7 +492,7 @@ export default function AddEntryModal({
       return
     }
 
-    const loggedAt = loggedAtFromDayAndTime(logDate, recipeLogTime, timeZone)
+    const loggedAt = loggedAtFromDayAndTime(entryDate, recipeLogTime, timeZone)
     if (!loggedAt.ok) {
       setError(loggedAt.error)
       return
@@ -503,6 +509,7 @@ export default function AddEntryModal({
             ? (resolvedRecipeServingWeightGrams ?? undefined)
             : undefined,
         loggedAt: loggedAt.value,
+        entryDate,
       })
       close()
     } catch (err) {
@@ -615,6 +622,19 @@ export default function AddEntryModal({
               recipes={recipes}
               value={selectedRecipeId}
               onChange={(recipeId) => selectRecipe(recipeId)}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="entry-recipe-log-date" style={labelBase}>
+              Log date
+            </label>
+            <input
+              id="entry-recipe-log-date"
+              type="date"
+              value={entryDate}
+              max={todayISO()}
+              onChange={(e) => setEntryDate(e.target.value || entryDate)}
+              style={inputBase}
             />
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -780,6 +800,25 @@ export default function AddEntryModal({
               style={inputBase}
             />
           </div>
+
+          {!isEdit && (
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="entry-log-date" style={labelBase}>
+                Log date
+              </label>
+              <input
+                id="entry-log-date"
+                type="date"
+                value={entryDate}
+                max={todayISO()}
+                onChange={(e) => setEntryDate(e.target.value || entryDate)}
+                style={inputBase}
+              />
+              <p style={{ fontSize: 12, color: '#a1a1aa', margin: '6px 0 0 0' }}>
+                Choose today or a previous day if you are catching up.
+              </p>
+            </div>
+          )}
 
           <div style={{ marginBottom: 16 }}>
             <label htmlFor="entry-log-time" style={labelBase}>

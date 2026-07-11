@@ -5,7 +5,7 @@ import DayNavigator from '../components/layout/DayNavigator'
 import { renderWithProviders } from './testUtils'
 
 describe('DayNavigator', () => {
-  it('lays out calendar left, day label, and arrows on the right', () => {
+  it('lays out day label, then calendar left of arrows on the right', () => {
     renderWithProviders(
       <DayNavigator
         date="2026-06-15"
@@ -17,11 +17,16 @@ describe('DayNavigator', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Jump to today' })).toBeInTheDocument()
+    const calendar = screen.getByRole('button', { name: 'Jump to today' })
+    const prev = screen.getByRole('button', { name: 'Previous day' })
+    const next = screen.getByRole('button', { name: 'Next day' })
     expect(screen.getByText('Monday')).toBeInTheDocument()
     expect(screen.getByText('June 15')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Previous day' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Next day' })).toBeInTheDocument()
+    // Calendar appears before arrows in document order (trailing cluster)
+    expect(
+      calendar.compareDocumentPosition(prev) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(prev.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('keeps calendar dormant on today', () => {

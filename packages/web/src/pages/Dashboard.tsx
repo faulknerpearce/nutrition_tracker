@@ -1,6 +1,7 @@
 import {
   computeNetBalance,
   formatDuration,
+  formatPortionLabel,
   resolveBmr,
   resolveTrendsDateRange,
   shiftISODate,
@@ -30,6 +31,34 @@ import {
 } from '../lib/deviceTotals'
 import { type FoodEntry, fetchEntries } from '../lib/entries'
 import { routeHref } from '../lib/routing'
+
+function formatMealWeightPreview(entry: FoodEntry): string | null {
+  if (entry.portionUnit === 'grams' && entry.portionQuantity != null) {
+    return formatPortionLabel(entry)
+  }
+  if (
+    entry.portionUnit === 'servings' &&
+    entry.portionQuantity != null &&
+    entry.referenceWeightGrams != null &&
+    entry.referenceWeightGrams > 0
+  ) {
+    const grams = entry.portionQuantity * entry.referenceWeightGrams
+    return grams % 1 === 0 ? `${grams}g total` : `${grams.toFixed(1)}g total`
+  }
+  return formatPortionLabel(entry)
+}
+
+function formatMealMacrosPreview(entry: FoodEntry): string {
+  const parts = [
+    `${entry.calories} kcal`,
+    `${entry.protein}g protein`,
+    `${entry.carbs}g carbs`,
+    `${entry.fat}g fat`,
+  ]
+  if (entry.fiber > 0) parts.push(`${entry.fiber}g fiber`)
+  if (entry.caffeine > 0) parts.push(`${entry.caffeine}mg caffeine`)
+  return parts.join(' · ')
+}
 
 function SectionHeader({
   label,
@@ -333,8 +362,8 @@ export default function Dashboard() {
                 <PreviewRow
                   key={entry.id}
                   primary={entry.name}
-                  secondary={entry.description || 'Food entry'}
-                  meta={`${entry.calories} kcal · ${entry.protein}g protein`}
+                  secondary={formatMealWeightPreview(entry) ?? undefined}
+                  macros={formatMealMacrosPreview(entry)}
                 />
               ))
             )}

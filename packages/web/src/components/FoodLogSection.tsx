@@ -19,6 +19,7 @@ interface FoodLogSectionProps {
       saveAsRecipe?: boolean
       perServing?: FoodEntryWrite
       servingWeightGrams?: number
+      entryDate?: string
     },
   ) => Promise<void>
   onLogRecipe?: (
@@ -28,6 +29,7 @@ interface FoodLogSectionProps {
       portionQuantity: number
       servingWeightGrams?: number
       loggedAt?: string
+      entryDate?: string
     },
   ) => Promise<void>
   onEdit?: (id: string, entry: FoodEntryWrite) => Promise<void>
@@ -45,6 +47,205 @@ interface FoodLogSectionProps {
   onScannerOpenChange?: (open: boolean) => void
   prefillEntry?: FoodEntryWrite | null
   onPrefillEntryChange?: (entry: FoodEntryWrite | null) => void
+}
+
+/** Prefer total grams when we can derive them; otherwise portion label. */
+function formatMealWeight(entry: FoodEntry): string | null {
+  if (entry.portionUnit === 'grams' && entry.portionQuantity != null) {
+    return formatPortionLabel(entry)
+  }
+  if (
+    entry.portionUnit === 'servings' &&
+    entry.portionQuantity != null &&
+    entry.referenceWeightGrams != null &&
+    entry.referenceWeightGrams > 0
+  ) {
+    const grams = entry.portionQuantity * entry.referenceWeightGrams
+    return grams % 1 === 0 ? `${grams}g total` : `${grams.toFixed(1)}g total`
+  }
+  return formatPortionLabel(entry)
+}
+
+function FoodLogEntryRow({
+  item,
+  deleting,
+  readOnly,
+  canEdit,
+  canDelete,
+  onShare,
+  onEdit,
+  onRemove,
+}: {
+  item: FoodEntry
+  deleting: boolean
+  readOnly: boolean
+  canEdit: boolean
+  canDelete: boolean
+  onShare: () => void
+  onEdit: () => void
+  onRemove: () => void
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const weightLabel = formatMealWeight(item)
+
+  return (
+    <div
+      className="log-entry-card"
+      style={{
+        background: neutrals.surfaceMuted,
+        border: `1px solid ${neutrals.border}`,
+        borderRadius: radius.lg,
+        padding: '16px 20px',
+        opacity: deleting ? 0.5 : 1,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 9999,
+            background: item.iconBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <i className={`fa-solid ${item.icon}`} style={{ color: item.iconColor, fontSize: 15 }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, color: neutrals.textPrimary }}>{item.name}</div>
+          {weightLabel && (
+            <div style={{ fontSize: 13, color: neutrals.textMuted, marginTop: 2 }}>{weightLabel}</div>
+          )}
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span>
+              <span style={{ fontWeight: 500, color: '#ea580c' }}>{item.calories}</span>{' '}
+              <span style={{ color: '#a1a1aa' }}>kcal</span>
+            </span>
+            <span>
+              <span style={{ fontWeight: 500, color: '#059669' }}>{item.protein}g</span>{' '}
+              <span style={{ color: '#a1a1aa' }}>protein</span>
+            </span>
+            <span>
+              <span style={{ fontWeight: 500, color: '#d97706' }}>{item.carbs}g</span>{' '}
+              <span style={{ color: '#a1a1aa' }}>carbs</span>
+            </span>
+            <span>
+              <span style={{ fontWeight: 500, color: '#db2777' }}>{item.fat}g</span>{' '}
+              <span style={{ color: '#a1a1aa' }}>fat</span>
+            </span>
+            {item.fiber > 0 && (
+              <span>
+                <span style={{ fontWeight: 500, color: '#65a30d' }}>{item.fiber}g</span>{' '}
+                <span style={{ color: '#a1a1aa' }}>fiber</span>
+              </span>
+            )}
+            {item.caffeine > 0 && (
+              <span>
+                <span style={{ fontWeight: 500, color: '#7c3aed' }}>{item.caffeine}mg</span>{' '}
+                <span style={{ color: '#a1a1aa' }}>caffeine</span>
+              </span>
+            )}
+          </div>
+        </div>
+        <div
+          className="log-entry-icon-actions"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+            flexShrink: 0,
+            alignSelf: 'center',
+          }}
+        >
+          {(canEdit || !readOnly) && (
+            <>
+              {!readOnly && (
+                <button
+                  type="button"
+                  className="delicate-icon-action"
+                  onClick={onShare}
+                  aria-label="Share entry"
+                  title="Share entry"
+                >
+                  <i className="fa-regular fa-share-from-square" />
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  type="button"
+                  className="delicate-icon-action"
+                  onClick={onEdit}
+                  aria-label="Edit entry"
+                  title="Edit entry"
+                >
+                  <i className="fa-regular fa-pen-to-square" />
+                </button>
+              )}
+              {!readOnly && canDelete && (
+                <button
+                  type="button"
+                  className="delicate-icon-action"
+                  onClick={onRemove}
+                  disabled={deleting}
+                  aria-label="Remove entry"
+                  title="Remove entry"
+                >
+                  <i className="fa-regular fa-trash-can" />
+                </button>
+              )}
+            </>
+          )}
+          <button
+            type="button"
+            className="delicate-icon-action"
+            onClick={() => setDetailsOpen((v) => !v)}
+            aria-expanded={detailsOpen}
+            aria-label={detailsOpen ? 'Hide meal details' : 'Show meal details'}
+            title={detailsOpen ? 'Hide details' : 'Details'}
+          >
+            <i
+              className="fa-solid fa-chevron-down"
+              style={{
+                transition: 'transform 0.2s ease',
+                transform: detailsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                fontSize: 12,
+              }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {detailsOpen && (
+        <div
+          style={{
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: `1px solid ${neutrals.border}`,
+            fontSize: 12,
+            color: neutrals.textMuted,
+          }}
+        >
+          {item.description ? (
+            <p style={{ margin: 0, color: neutrals.textSecondary }}>{item.description}</p>
+          ) : (
+            <p style={{ margin: 0, color: neutrals.textFaint }}>No description</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function FoodLogSection({
@@ -112,122 +313,17 @@ export default function FoodLogSection({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: collapsible ? 20 : 0 }}>
           {entries.map((item) => (
-            <div
+            <FoodLogEntryRow
               key={item.id}
-              className="log-entry-card"
-              style={{
-                background: neutrals.surfaceMuted,
-                border: `1px solid ${neutrals.border}`,
-                borderRadius: radius.lg,
-                padding: '20px 24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 20,
-                opacity: deleting === item.id ? 0.5 : 1,
-              }}
-            >
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 9999,
-                  background: item.iconBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <i className={`fa-solid ${item.icon}`} style={{ color: item.iconColor, fontSize: 15 }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{item.name}</div>
-                  <div style={{ fontSize: 12, color: '#71717a' }}>
-                    {[item.description, formatPortionLabel(item)].filter(Boolean).join(' · ')}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    marginTop: 8,
-                    fontSize: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <span>
-                    <span style={{ fontWeight: 500, color: '#ea580c' }}>{item.calories}</span>{' '}
-                    <span style={{ color: '#a1a1aa' }}>kcal</span>
-                  </span>
-                  <span>
-                    <span style={{ fontWeight: 500, color: '#059669' }}>{item.protein}g</span>{' '}
-                    <span style={{ color: '#a1a1aa' }}>protein</span>
-                  </span>
-                  <span>
-                    <span style={{ fontWeight: 500, color: '#d97706' }}>{item.carbs}g</span>{' '}
-                    <span style={{ color: '#a1a1aa' }}>carbs</span>
-                  </span>
-                  {item.fat > 0 && (
-                    <span>
-                      <span style={{ fontWeight: 500, color: '#db2777' }}>{item.fat}g</span>{' '}
-                      <span style={{ color: '#a1a1aa' }}>fat</span>
-                    </span>
-                  )}
-                  {item.fiber > 0 && (
-                    <span>
-                      <span style={{ fontWeight: 500, color: '#65a30d' }}>{item.fiber}g</span>{' '}
-                      <span style={{ color: '#a1a1aa' }}>fiber</span>
-                    </span>
-                  )}
-                  {item.caffeine > 0 && (
-                    <span>
-                      <span style={{ fontWeight: 500, color: '#7c3aed' }}>{item.caffeine}mg</span>{' '}
-                      <span style={{ color: '#a1a1aa' }}>caffeine</span>
-                    </span>
-                  )}
-                  {(onEdit || !readOnly) && (
-                    <span className="log-entry-icon-actions">
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          className="delicate-icon-action"
-                          onClick={() => setSharingEntry(item)}
-                          aria-label="Share entry"
-                          title="Share entry"
-                        >
-                          <i className="fa-regular fa-share-from-square" />
-                        </button>
-                      )}
-                      {onEdit && (
-                        <button
-                          type="button"
-                          className="delicate-icon-action"
-                          onClick={() => setEditingEntry(item)}
-                          aria-label="Edit entry"
-                          title="Edit entry"
-                        >
-                          <i className="fa-regular fa-pen-to-square" />
-                        </button>
-                      )}
-                      {!readOnly && onDelete && (
-                        <button
-                          type="button"
-                          className="delicate-icon-action"
-                          onClick={() => removeEntry(item.id)}
-                          disabled={deleting === item.id}
-                          aria-label="Remove entry"
-                          title="Remove entry"
-                        >
-                          <i className="fa-regular fa-trash-can" />
-                        </button>
-                      )}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+              item={item}
+              deleting={deleting === item.id}
+              readOnly={readOnly}
+              canEdit={Boolean(onEdit)}
+              canDelete={Boolean(onDelete)}
+              onShare={() => setSharingEntry(item)}
+              onEdit={() => setEditingEntry(item)}
+              onRemove={() => void removeEntry(item.id)}
+            />
           ))}
         </div>
       )}

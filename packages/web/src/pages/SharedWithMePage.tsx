@@ -29,6 +29,23 @@ import {
 } from '../lib/sharing'
 import { forkWorkout } from '../lib/workouts'
 
+/** Human-readable when a share arrived (local timezone) — date + time. */
+function formatShareReceivedAt(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return 'unknown date'
+  const datePart = d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  const timePart = d.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+  return `${datePart} at ${timePart}`
+}
+
 function SharedSection({
   title,
   count,
@@ -332,7 +349,7 @@ export default function SharedWithMePage() {
                 iconBg={item.entry.iconBg}
                 iconColor={item.entry.iconColor}
                 title={item.entry.name}
-                subtitle={`Shared by ${item.share.ownerDisplayName} · ${item.entry.calories} kcal`}
+                subtitle={`Shared by ${item.share.ownerDisplayName} · ${item.entry.calories} kcal · Received ${formatShareReceivedAt(item.share.createdAt)}`}
                 onView={() => setViewingEntry(item)}
                 actions={
                   <SharedCatalogActions

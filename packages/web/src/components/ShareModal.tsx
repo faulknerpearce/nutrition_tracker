@@ -65,7 +65,8 @@ export default function ShareModal({
   const [searching, setSearching] = useState(false)
   const [existingShares, setExistingShares] = useState<ExistingShare[]>([])
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
-  const [sharingUserId, setSharingUserId] = useState<string | null>(null)
+  const [selectedUser, setSelectedUser] = useState<ShareUserResult | null>(null)
+  const [sending, setSending] = useState(false)
   const [revokingId, setRevokingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -143,8 +144,13 @@ export default function ShareModal({
     return () => window.clearTimeout(timer)
   }, [trimmedQuery])
 
-  const handleShare = async (user: ShareUserResult) => {
-    setSharingUserId(user.id)
+  const handleSend = async () => {
+    if (!selectedUser) {
+      setError('Select a person to share with')
+      return
+    }
+    const user = selectedUser
+    setSending(true)
     setError(null)
     setSuccess(null)
     try {
@@ -160,11 +166,12 @@ export default function ShareModal({
       setSuccess(`Shared with ${user.displayName}`)
       setQuery('')
       setResults([])
+      setSelectedUser(null)
       await loadExistingShares(loadKey)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to share')
     } finally {
-      setSharingUserId(null)
+      setSending(false)
     }
   }
 
@@ -222,35 +229,57 @@ export default function ShareModal({
       )}
 
       {visibleResults.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          {visibleResults.map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => handleShare(user)}
-              disabled={sharingUserId === user.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                padding: '12px 14px',
-                borderRadius: 12,
-                border: '1px solid #e4e4e7',
-                background: 'white',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              <span>
-                <span style={{ display: 'block', fontWeight: 600, fontSize: 14 }}>{user.displayName}</span>
-                <span style={{ display: 'block', fontSize: 12, color: '#71717a' }}>{user.emailHint}</span>
-              </span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--zone-accent)' }}>
-                {sharingUserId === user.id ? 'Sharing...' : 'Share'}
-              </span>
-            </button>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {visibleResults.map((user) => {
+            const selected = selectedUser?.id === user.id
+            return (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => {
+                  setSelectedUser(user)
+                  setError(null)
+                  setSuccess(null)
+                }}
+                disabled={sending}
+                aria-pressed={selected}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  border: selected
+                    ? '2px solid var(--zone-accent)'
+                    : '1px solid #e4e4e7',
+                  background: selected
+                    ? 'color-mix(in srgb, var(--zone-accent) 10%, white)'
+                    : 'white',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span>
+                  <span style={{ display: 'block', fontWeight: 600, fontSize: 14 }}>
+                    {user.displayName}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 12, color: '#71717a' }}>
+                    {user.emailHint}
+                  </span>
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: selected ? 'var(--zone-accent)' : '#a1a1aa',
+                  }}
+                >
+                  {selected ? 'Selected' : 'Select'}
+                </span>
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -314,9 +343,34 @@ export default function ShareModal({
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+        }}
+      >
         <button type="button" onClick={onClose} style={{ ...primaryButton, background: '#52525b' }}>
           Done
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleSend()}
+          disabled={!selectedUser || sending}
+          style={{
+            ...primaryButton,
+            opacity: !selectedUser || sending ? 0.45 : 1,
+            cursor: !selectedUser || sending ? 'not-allowed' : 'pointer',
+          }}
+          title={
+            selectedUser
+              ? `Send to ${selectedUser.displayName}`
+              : 'Select a person above to enable Send'
+          }
+        >
+          {sending ? 'Sending…' : 'Send'}
         </button>
       </div>
     </Modal>

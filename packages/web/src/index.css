@@ -545,9 +545,13 @@ html {
 .inputs-day-nav-leading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 0;
   min-width: 0;
   flex: 1;
+  /* Flush with card left edge (calendar sits with arrows on the right) */
+  margin: 0;
+  padding: 0;
 }
 
 .inputs-day-nav-trailing {
@@ -660,9 +664,37 @@ html {
 .zone-root[data-zone='inputs'] .inputs-day-nav,
 .zone-root[data-zone='outputs'] .inputs-day-nav {
   margin-bottom: 12px;
+  margin-left: 0;
+  margin-right: 0;
+  /* Match CollapsiblePanel / card title inset (padding 20px 24px) so "Today" lines up with card titles */
+  padding: 4px 0 4px 24px;
   background: transparent;
   border: none;
   box-shadow: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Day title hugs the left; calendar + arrows stay on the right */
+.zone-root[data-zone='inputs'] .inputs-day-nav-leading,
+.zone-root[data-zone='outputs'] .inputs-day-nav-leading {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-start;
+}
+
+.zone-root[data-zone='inputs'] .inputs-day-nav-label,
+.zone-root[data-zone='outputs'] .inputs-day-nav-label {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.zone-root[data-zone='inputs'] .inputs-day-nav-title,
+.zone-root[data-zone='outputs'] .inputs-day-nav-title,
+.zone-root[data-zone='inputs'] .inputs-day-nav-calendar,
+.zone-root[data-zone='outputs'] .inputs-day-nav-calendar {
+  text-align: left;
 }
 
 .zone-root[data-zone='inputs'] .inputs-day-nav-title,

@@ -23,7 +23,7 @@ const navTabs: { route: 'dashboard' | 'inputs' | 'outputs'; label: string }[] = 
 ]
 
 export default function Layout({ children, activeRoute }: LayoutProps) {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const profileContext = useProfileOptional()
   const [menuOpen, setMenuOpen] = useState(false)
   const [fetchedShareCount, setFetchedShareCount] = useState(0)
@@ -114,7 +114,31 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
               />
               <span className="app-nav-title">Nutrition Tracker</span>
             </a>
-            <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <div
+              ref={menuRef}
+              style={{
+                position: 'relative',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <span
+                className="account-menu-display-name"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: zone === 'profile' ? '#3A3A3C' : 'var(--color-text-secondary, #3A3A3C)',
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                title={displayLabel}
+              >
+                {displayLabel}
+              </span>
               <button
                 type="button"
                 aria-label={
@@ -166,18 +190,6 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
                     zIndex: 50,
                   }}
                 >
-                  <div
-                    style={{
-                      padding: '10px 12px',
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: '#3f3f46',
-                      borderBottom: '1px solid #f4f4f5',
-                      marginBottom: 4,
-                    }}
-                  >
-                    {displayLabel}
-                  </div>
                   <a
                     href={routeHref('shared')}
                     role="menuitem"
@@ -233,28 +245,6 @@ export default function Layout({ children, activeRoute }: LayoutProps) {
                   >
                     Profile
                   </a>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenuOpen(false)
-                      void signOut()
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: 'transparent',
-                      color: '#3f3f46',
-                      fontSize: 13,
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    Log out
-                  </button>
                 </div>
               )}
             </div>
