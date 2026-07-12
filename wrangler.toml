@@ -18,3 +18,5 @@ pages_build_output_dir = "packages/web/dist"
 # VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are build-time vars for the
 # client bundle (set in CI or locally before `npm run build`).
 [vars]
+VITE_SUPABASE_URL = "https://vqfgprypqcplfceigwur.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZmdwcnlwcWNwbGZjZWlnd3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNTQ5ODIsImV4cCI6MjA5NzczMDk4Mn0.7aThBYnXbuaV8ZMX_YWUs210rqU0cWqpqbLcVyZf3kc"
