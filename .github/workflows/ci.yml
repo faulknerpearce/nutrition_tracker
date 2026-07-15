@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
-    name: Install, typecheck, lint, format
+    name: Install, typecheck, lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
