@@ -52,21 +52,30 @@ export function validateServingsLogged(value: unknown): number {
   return servings
 }
 
+/**
+ * Scale batch (full-recipe) macros to a number of servings logged.
+ * Uses a single round after multiplying so logging the full batch
+ * (servingsLogged === defaultServings) conserves batch totals.
+ * Do not route through perServingTotals — intermediate rounding loses kcal.
+ */
 export function scaleRecipeToServings(
   batchTotals: Totals,
   defaultServings: number,
   servingsLogged: number,
 ): Totals {
+  if (defaultServings <= 0) {
+    throw new Error('defaultServings must be greater than 0')
+  }
   if (servingsLogged <= 0) {
     throw new Error('servingsLogged must be greater than 0')
   }
-  const perServing = perServingTotals(batchTotals, defaultServings)
+  const factor = servingsLogged / defaultServings
   return {
-    calories: Math.round(perServing.calories * servingsLogged),
-    protein: Math.round(perServing.protein * servingsLogged),
-    carbs: Math.round(perServing.carbs * servingsLogged),
-    caffeine: Math.round(perServing.caffeine * servingsLogged),
-    fat: Math.round(perServing.fat * servingsLogged),
-    fiber: Math.round(perServing.fiber * servingsLogged),
+    calories: Math.round(batchTotals.calories * factor),
+    protein: Math.round(batchTotals.protein * factor),
+    carbs: Math.round(batchTotals.carbs * factor),
+    caffeine: Math.round(batchTotals.caffeine * factor),
+    fat: Math.round(batchTotals.fat * factor),
+    fiber: Math.round(batchTotals.fiber * factor),
   }
 }
