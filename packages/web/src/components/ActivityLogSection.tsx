@@ -1,7 +1,7 @@
 import { formatDistance, formatDuration } from '@body-io/shared'
 import { useState } from 'react'
 import type { Activity, ActivityWrite } from '../lib/activities'
-import { neutrals, radius } from '../lib/design-tokens'
+import { NEUTRAL_LIGHT, neutrals, radius } from '../lib/design-tokens'
 import AddActivityModal from './AddActivityModal'
 import ShareModal from './ShareModal'
 import { Button, Card, EmptyState } from './ui'
@@ -99,8 +99,8 @@ export default function ActivityLogSection({
                 key={item.id}
                 className="log-entry-card"
                 style={{
-                  background: neutrals.surfaceMuted,
-                  border: `1px solid ${neutrals.border}`,
+                  background: NEUTRAL_LIGHT,
+                  border: `1px solid ${neutrals.borderStrong}`,
                   borderRadius: radius.lg,
                   padding: '20px 24px',
                   opacity: deleting === item.id ? 0.5 : 1,

@@ -53,11 +53,16 @@ export const neutrals = {
   textFaint: '#8A8E8C',
   border: 'rgba(7, 8, 8, 0.08)',
   borderStrong: 'rgba(7, 8, 8, 0.12)',
-  /** Elevated cards sit slightly above the light page wash. */
+  /** Elevated shells (collapsible panels, modals) — white. */
   surface: '#FFFFFF',
+  /**
+   * Filled content boxes (meal/activity log rows) — brand light neutral.
+   * Must differ from pageBg so boxes read as #EBF0ED tiles.
+   */
   surfaceMuted: NEUTRAL_LIGHT,
   surfaceHover: '#E2E8E4',
-  pageBg: NEUTRAL_LIGHT,
+  /** Page canvas — white so light-neutral boxes are visible. */
+  pageBg: '#FFFFFF',
 } as const
 
 /** Semantic status (alerts) — slightly softened for wellness feel. */
@@ -139,32 +144,35 @@ export const atmosphere = {
  * Soft zone atmospheres — light washes, not full-bleed skies.
  * Zone identity comes from accent + subtle page tint, not saturated gradients.
  */
+/** White canvas for zone washes so light-neutral content boxes stay distinct. */
+const ZONE_WASH_BASE = '#FFFFFF'
+
 export const zoneGradients: Record<ZoneId, string> = {
   dashboard: `linear-gradient(
     180deg,
-    color-mix(in srgb, ${ZONE_BLUE} 11%, ${NEUTRAL_LIGHT}) 0%,
-    color-mix(in srgb, ${ZONE_BLUE} 4%, ${NEUTRAL_LIGHT}) 42%,
-    ${NEUTRAL_LIGHT} 100%
+    color-mix(in srgb, ${ZONE_BLUE} 11%, ${ZONE_WASH_BASE}) 0%,
+    color-mix(in srgb, ${ZONE_BLUE} 4%, ${ZONE_WASH_BASE}) 42%,
+    ${ZONE_WASH_BASE} 100%
   )`,
-  /** Fueling — soft green wash over light neutral */
+  /** Fueling — soft green wash over white */
   inputs: `linear-gradient(
     180deg,
-    color-mix(in srgb, ${ZONE_INPUT} 11%, ${NEUTRAL_LIGHT}) 0%,
-    color-mix(in srgb, ${ZONE_INPUT} 4%, ${NEUTRAL_LIGHT}) 42%,
-    ${NEUTRAL_LIGHT} 100%
+    color-mix(in srgb, ${ZONE_INPUT} 11%, ${ZONE_WASH_BASE}) 0%,
+    color-mix(in srgb, ${ZONE_INPUT} 4%, ${ZONE_WASH_BASE}) 42%,
+    ${ZONE_WASH_BASE} 100%
   )`,
-  /** Burning — soft yellow wash over light neutral */
+  /** Burning — soft yellow wash over white */
   outputs: `linear-gradient(
     180deg,
-    color-mix(in srgb, ${ZONE_OUTPUT} 12%, ${NEUTRAL_LIGHT}) 0%,
-    color-mix(in srgb, ${ZONE_OUTPUT} 4%, ${NEUTRAL_LIGHT}) 42%,
-    ${NEUTRAL_LIGHT} 100%
+    color-mix(in srgb, ${ZONE_OUTPUT} 12%, ${ZONE_WASH_BASE}) 0%,
+    color-mix(in srgb, ${ZONE_OUTPUT} 4%, ${ZONE_WASH_BASE}) 42%,
+    ${ZONE_WASH_BASE} 100%
   )`,
   profile: `linear-gradient(
     180deg,
-    color-mix(in srgb, ${NEUTRAL_DARK} 4%, ${NEUTRAL_LIGHT}) 0%,
-    ${NEUTRAL_LIGHT} 50%,
-    ${NEUTRAL_LIGHT} 100%
+    color-mix(in srgb, ${NEUTRAL_DARK} 3%, ${ZONE_WASH_BASE}) 0%,
+    ${ZONE_WASH_BASE} 50%,
+    ${ZONE_WASH_BASE} 100%
   )`,
 }
 

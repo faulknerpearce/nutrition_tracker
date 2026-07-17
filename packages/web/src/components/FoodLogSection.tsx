@@ -2,7 +2,7 @@ import { formatPortionLabel } from '@body-io/shared'
 import { useState } from 'react'
 import type { MappedBarcodeProduct } from '../lib/openFoodFacts'
 import type { FoodEntry, FoodEntryWrite } from '../lib/entries'
-import { neutrals, radius } from '../lib/design-tokens'
+import { NEUTRAL_LIGHT, neutrals, radius } from '../lib/design-tokens'
 import AddEntryModal from './AddEntryModal'
 import BarcodeScannerModal from './BarcodeScannerModal'
 import FoodLogEntryStats from './FoodLogEntryStats'
@@ -102,8 +102,9 @@ function FoodLogEntryRow({
     <div
       className="log-entry-card"
       style={{
-        background: neutrals.surfaceMuted,
-        border: `1px solid ${neutrals.border}`,
+        // Brand light neutral (#EBF0ED) — explicit so cards stay distinct from white shells
+        background: NEUTRAL_LIGHT,
+        border: `1px solid ${neutrals.borderStrong}`,
         borderRadius: radius.lg,
         padding: '16px 20px',
         opacity: deleting ? 0.5 : 1,
